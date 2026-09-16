@@ -8,186 +8,123 @@
 
 <style>
 
-* {
-  box-sizing: border-box;
-}
-
 body {
-  margin: 0;
-  padding: 20px;
+  font-family: Arial, sans-serif;
   background: #111;
   color: white;
-  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
   text-align: center;
 }
 
 .container {
   max-width: 700px;
-  margin: 0 auto;
+  margin: auto;
 }
 
 h1 {
-  font-size: 30px;
-  margin: 10px 0 8px;
+  margin-bottom: 8px;
 }
 
 .subtitle {
-  color: #bbb;
-  font-size: 16px;
-  line-height: 1.4;
+  color: #aaa;
   margin-bottom: 25px;
 }
 
-/* MICROPHONE */
-
 #micButton {
-  width: 150px;
-  height: 150px;
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
   border: none;
-  background: #d94b32;
+  background: #e94b35;
   color: white;
-  font-size: 65px;
+  font-size: 45px;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-  margin: 10px auto;
+  margin: 10px auto 20px;
   display: block;
 }
 
-#micButton:hover {
-  background: #ec5b3d;
-}
-
 #micButton.recording {
-  background: #ff2d1b;
-  animation: pulse 1.2s infinite;
+  background: #36a85c;
 }
 
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.08);
-  }
-
-  100% {
-    transform: scale(1);
-  }
+#status {
+  min-height: 25px;
+  color: #aaa;
+  margin-bottom: 15px;
 }
-
-#recordingStatus {
-  min-height: 24px;
-  margin: 12px 0 20px;
-  color: #ff8068;
-  font-weight: bold;
-}
-
-/* TEXT AREA */
 
 textarea {
   width: 100%;
   min-height: 180px;
-  resize: vertical;
-  padding: 15px;
-  border-radius: 12px;
-  border: 1px solid #444;
+  box-sizing: border-box;
   background: #222;
   color: white;
-  font-size: 17px;
-  line-height: 1.5;
-}
-
-textarea::placeholder {
-  color: #888;
-}
-
-/* GENERATE BUTTON */
-
-.generate {
-  width: 100%;
-  margin-top: 15px;
-  padding: 17px;
-  border: none;
+  border: 1px solid #444;
   border-radius: 10px;
-  background: #e05a38;
-  color: white;
-  font-size: 19px;
-  font-weight: bold;
+  padding: 15px;
+  font-size: 17px;
+  resize: vertical;
+}
+
+button {
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 18px;
   cursor: pointer;
 }
 
-.generate:hover {
-  background: #f06a45;
+#generateButton {
+  margin-top: 15px;
+  width: 100%;
+  background: #f0c040;
+  color: #111;
+  font-weight: bold;
+  font-size: 18px;
 }
-
-.generate:disabled {
-  opacity: 0.6;
-  cursor: wait;
-}
-
-/* RESULT */
-
-#resultCard {
-  margin-top: 30px;
-  background: #1d1d1d;
-  border-radius: 14px;
-  padding: 20px;
-  text-align: left;
-  display: none;
-}
-
-#result {
-  white-space: pre-wrap;
-  line-height: 1.5;
-  font-size: 16px;
-}
-
-/* ACTION BUTTONS */
 
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 20px;
+  margin-top: 15px;
 }
 
 .actions button {
   flex: 1;
   min-width: 100px;
-  padding: 12px;
-  border: 1px solid #555;
-  border-radius: 8px;
-  background: #292929;
+  background: #333;
   color: white;
-  cursor: pointer;
 }
 
-.actions button:hover {
-  background: #3a3a3a;
+#resultCard {
+  display: none;
+  text-align: left;
+  margin-top: 30px;
+  background: #1d1d1d;
+  border: 1px solid #444;
+  border-radius: 12px;
+  padding: 20px;
 }
 
-@media (max-width: 500px) {
+#result {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
 
-  body {
-    padding: 15px;
-  }
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
 
-  h1 {
-    font-size: 25px;
-  }
-
-  #micButton {
-    width: 125px;
-    height: 125px;
-    font-size: 55px;
-  }
-
+#connectionFrame {
+  display: none;
 }
 
 </style>
 </head>
+
 
 <body>
 
@@ -196,24 +133,25 @@ textarea::placeholder {
   <h1>Turn My Mess Into a Swim Game</h1>
 
   <div class="subtitle">
-    Click the microphone button above and record your mess,
-    or copy/paste your mess in this text field.
+    Say it messy. We'll turn it into something teachable.
   </div>
 
-  <button id="micButton" onclick="toggleRecording()">🎙️</button>
 
-  <div id="recordingStatus">
-    Click the microphone to start recording.
-  </div>
+  <button id="micButton" onclick="toggleRecording()">🎤</button>
+
+  <div id="status">Ready to record.</div>
+
 
   <textarea
     id="mess"
-    placeholder="Tell me your messy swim game idea here..."
+    placeholder="Click the microphone and describe your swim game..."
   ></textarea>
 
-  <button class="generate" onclick="generateGame()">
+
+  <button id="generateButton" onclick="generateGame()">
     Turn My Mess Into A Swim Game
   </button>
+
 
   <div id="resultCard">
 
@@ -231,7 +169,7 @@ textarea::placeholder {
 
       <button onclick="saveResult()">Save</button>
 
-      <button onclick="clearAll()">Clear</button>
+      <button onclick="clearResult()">Clear</button>
 
     </div>
 
@@ -240,15 +178,40 @@ textarea::placeholder {
 </div>
 
 
+<!--
+  This hidden iframe receives the Apps Script response.
+  It lets the GitHub page communicate with Apps Script
+  without using fetch/CORS.
+-->
+<iframe
+  id="connectionFrame"
+  name="connectionFrame">
+</iframe>
+
+
+<!--
+  Hidden form used to send the messy idea to Apps Script.
+-->
+<form
+  id="appsScriptForm"
+  method="POST"
+  target="connectionFrame"
+  action="https://script.google.com/macros/s/AKfycbxf4n39tX-1olKwTeZIvg34J_jTHbDbBu8gfRu3pgsdWaL3sih3mNZwJPxrugHCGvpRvw/exec">
+
+  <input
+    type="hidden"
+    name="mess"
+    id="appsScriptMess">
+
+  <input
+    type="hidden"
+    name="requestId"
+    id="appsScriptRequestId">
+
+</form>
+
+
 <script>
-
-/* =========================================================
-   APPS SCRIPT BACKEND
-   ========================================================= */
-
-const APPS_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbxf4n39tX-1olKwTeZIvg34J_jTHbDbBu8gfRu3pgsdWaL3sih3mNZwJPxrugHCGvpRvw/exec";
-
 
 /* =========================================================
    SPEECH RECOGNITION
@@ -259,19 +222,12 @@ const SpeechRecognition =
   window.webkitSpeechRecognition;
 
 let recognition = null;
-let isRecording = false;
+let recording = false;
+
 let finalTranscript = "";
 
 
-function setupRecognition() {
-
-  if (!SpeechRecognition) {
-
-    document.getElementById("recordingStatus").innerText =
-      "Browser speech recognition isn't available. You can use your phone keyboard microphone instead.";
-
-    return false;
-  }
+if (SpeechRecognition) {
 
   recognition = new SpeechRecognition();
 
@@ -282,14 +238,14 @@ function setupRecognition() {
 
   recognition.onstart = function() {
 
-    isRecording = true;
+    recording = true;
 
     document
       .getElementById("micButton")
       .classList.add("recording");
 
-    document.getElementById("recordingStatus").innerText =
-      "Recording... speak your messy game idea. Click the microphone again when you're finished.";
+    document.getElementById("status").textContent =
+      "Recording…";
 
   };
 
@@ -319,6 +275,7 @@ function setupRecognition() {
 
     }
 
+
     document.getElementById("mess").value =
       finalTranscript + interimTranscript;
 
@@ -331,28 +288,13 @@ function setupRecognition() {
 
     if (event.error === "not-allowed") {
 
-      document.getElementById("recordingStatus").innerText =
-        "Microphone permission was blocked. Please allow microphone access.";
+      document.getElementById("status").textContent =
+        "Microphone permission was denied.";
 
-      isRecording = false;
+    } else {
 
-      document
-        .getElementById("micButton")
-        .classList.remove("recording");
-
-    }
-
-    else if (event.error === "no-speech") {
-
-      document.getElementById("recordingStatus").innerText =
-        "I didn't hear anything. Keep speaking or click the microphone again.";
-
-    }
-
-    else {
-
-      document.getElementById("recordingStatus").innerText =
-        "Speech recognition error: " + event.error;
+      document.getElementById("status").textContent =
+        "Microphone error: " + event.error;
 
     }
 
@@ -361,7 +303,7 @@ function setupRecognition() {
 
   recognition.onend = function() {
 
-    if (isRecording) {
+    if (recording) {
 
       try {
         recognition.start();
@@ -373,48 +315,29 @@ function setupRecognition() {
 
   };
 
-
-  return true;
 }
 
 
 /* =========================================================
-   MICROPHONE BUTTON
+   MICROPHONE
    ========================================================= */
 
 function toggleRecording() {
 
-  if (!SpeechRecognition) {
+  if (!recognition) {
 
-    document.getElementById("recordingStatus").innerText =
-      "Browser speech recognition isn't available. You can use your phone keyboard microphone instead.";
+    document.getElementById("status").textContent =
+      "Speech recognition is not available in this browser.";
 
     return;
 
   }
 
 
-  if (!recognition) {
-
-    if (!setupRecognition()) {
-      return;
-    }
-
-  }
-
-
-  if (isRecording) {
-
-    stopRecording();
-
-  } else {
+  if (!recording) {
 
     finalTranscript =
-      document.getElementById("mess").value.trim();
-
-    if (finalTranscript) {
-      finalTranscript += " ";
-    }
+      document.getElementById("mess").value;
 
     try {
 
@@ -426,29 +349,27 @@ function toggleRecording() {
 
     }
 
-  }
+  } else {
 
-}
-
-
-function stopRecording() {
-
-  isRecording = false;
-
-  document
-    .getElementById("micButton")
-    .classList.remove("recording");
-
-  document.getElementById("recordingStatus").innerText =
-    "Recording stopped.";
-
-  if (recognition) {
+    recording = false;
 
     try {
+
       recognition.stop();
+
     } catch (e) {
+
       console.log(e);
+
     }
+
+
+    document
+      .getElementById("micButton")
+      .classList.remove("recording");
+
+    document.getElementById("status").textContent =
+      "Recording stopped.";
 
   }
 
@@ -456,10 +377,10 @@ function stopRecording() {
 
 
 /* =========================================================
-   GENERATE THE SWIM GAME
+   GENERATE GAME
    ========================================================= */
 
-async function generateGame() {
+function generateGame() {
 
   const mess =
     document.getElementById("mess").value.trim();
@@ -467,89 +388,105 @@ async function generateGame() {
 
   if (!mess) {
 
-    alert(
-      "Please record or type your messy game idea first."
-    );
+    document.getElementById("status").textContent =
+      "Please describe your swim game first.";
 
     return;
 
   }
 
 
-  stopRecording();
+  const generateButton =
+    document.getElementById("generateButton");
+
+  generateButton.classList.add("loading");
+
+  generateButton.textContent =
+    "Turning your mess into a game…";
 
 
-  const button =
-    document.querySelector(".generate");
-
-
-  button.disabled = true;
-
-  button.innerText =
-    "Turning your mess into a swim game...";
+  document.getElementById("status").textContent =
+    "Creating your swim game…";
 
 
   document.getElementById("resultCard").style.display =
     "block";
 
-
-  document.getElementById("result").innerText =
-    "Working on it...";
-
-
-  try {
-
-    const response = await fetch(
-      APPS_SCRIPT_URL,
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type":
-            "text/plain;charset=utf-8"
-        },
-
-        body: JSON.stringify({
-          mess: mess
-        })
-      }
-    );
+  document.getElementById("result").textContent =
+    "Thinking…";
 
 
-    const text =
-      await response.text();
+  /*
+   * Create a unique ID so we know which response belongs
+   * to this request.
+   */
+
+  const requestId =
+    Date.now().toString() +
+    Math.random().toString(36).substring(2);
 
 
-    if (!response.ok) {
+  document.getElementById("appsScriptMess").value =
+    mess;
 
-      throw new Error(
-        text || "Something went wrong."
-      );
-
-    }
+  document.getElementById("appsScriptRequestId").value =
+    requestId;
 
 
-    document.getElementById("result").innerText =
-      text;
+  /*
+   * Send the form to Apps Script.
+   */
+
+  document.getElementById("appsScriptForm").submit();
+
+}
 
 
-  } catch (error) {
+/* =========================================================
+   RECEIVE RESPONSE FROM APPS SCRIPT
+   ========================================================= */
 
-    console.error(error);
+window.addEventListener("message", function(event) {
 
-    document.getElementById("result").innerText =
-      "Something went wrong connecting to the game generator.\n\n" +
-      error.message;
+  const data = event.data;
 
+
+  if (!data) {
+    return;
   }
 
 
-  button.disabled = false;
+  if (data.type !== "swimGameResult") {
+    return;
+  }
 
-  button.innerText =
+
+  const currentRequestId =
+    document.getElementById("appsScriptRequestId").value;
+
+
+  if (data.requestId !== currentRequestId) {
+    return;
+  }
+
+
+  document.getElementById("result").textContent =
+    data.text;
+
+
+  document.getElementById("status").textContent =
+    "Game created!";
+
+
+  const generateButton =
+    document.getElementById("generateButton");
+
+  generateButton.classList.remove("loading");
+
+  generateButton.textContent =
     "Turn My Mess Into A Swim Game";
 
-}
+});
 
 
 /* =========================================================
@@ -559,7 +496,7 @@ async function generateGame() {
 function copyResult() {
 
   const text =
-    document.getElementById("result").innerText;
+    document.getElementById("result").textContent;
 
   navigator.clipboard.writeText(text);
 
@@ -573,13 +510,10 @@ function copyResult() {
 function downloadResult() {
 
   const text =
-    document.getElementById("result").innerText;
+    document.getElementById("result").textContent;
 
   const blob =
-    new Blob(
-      [text],
-      { type: "text/plain" }
-    );
+    new Blob([text], { type: "text/plain" });
 
   const url =
     URL.createObjectURL(blob);
@@ -606,7 +540,7 @@ function downloadResult() {
 async function shareResult() {
 
   const text =
-    document.getElementById("result").innerText;
+    document.getElementById("result").textContent;
 
 
   if (navigator.share) {
@@ -614,10 +548,8 @@ async function shareResult() {
     try {
 
       await navigator.share({
-        title:
-          "My Swim Game",
-        text:
-          text
+        title: "My Swim Game",
+        text: text
       });
 
     } catch (e) {
@@ -628,11 +560,9 @@ async function shareResult() {
 
   } else {
 
-    copyResult();
+    await navigator.clipboard.writeText(text);
 
-    alert(
-      "Your swim game was copied to the clipboard."
-    );
+    alert("Copied to clipboard.");
 
   }
 
@@ -646,39 +576,33 @@ async function shareResult() {
 function printResult() {
 
   const text =
-    document.getElementById("result").innerText;
-
+    document.getElementById("result").textContent;
 
   const printWindow =
-    window.open(
-      "",
-      "_blank"
-    );
+    window.open("", "_blank");
 
 
-  printWindow.document.write(
-    "<html><head><title>Swim Game</title></head><body>" +
-    "<pre style='white-space:pre-wrap;font-family:Arial;font-size:16px;'>" +
-    escapeHtml(text) +
-    "</pre></body></html>"
-  );
+  printWindow.document.write(`
+    <html>
+    <head>
+      <title>Swim Game</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          padding: 40px;
+          white-space: pre-wrap;
+          line-height: 1.5;
+        }
+      </style>
+    </head>
+    <body>${escapeHtml(text)}</body>
+    </html>
+  `);
 
 
   printWindow.document.close();
 
   printWindow.print();
-
-}
-
-
-function escapeHtml(text) {
-
-  const div =
-    document.createElement("div");
-
-  div.innerText = text;
-
-  return div.innerHTML;
 
 }
 
@@ -690,16 +614,14 @@ function escapeHtml(text) {
 function saveResult() {
 
   const text =
-    document.getElementById("result").innerText;
+    document.getElementById("result").textContent;
 
   localStorage.setItem(
     "savedSwimGame",
     text
   );
 
-  alert(
-    "Your swim game has been saved on this device."
-  );
+  alert("Swim game saved on this device.");
 
 }
 
@@ -708,18 +630,35 @@ function saveResult() {
    CLEAR
    ========================================================= */
 
-function clearAll() {
-
-  stopRecording();
+function clearResult() {
 
   document.getElementById("mess").value = "";
 
-  document.getElementById("result").innerText = "";
+  document.getElementById("result").textContent = "";
 
   document.getElementById("resultCard").style.display =
     "none";
 
   finalTranscript = "";
+
+  document.getElementById("status").textContent =
+    "Ready to record.";
+
+}
+
+
+/* =========================================================
+   HTML ESCAPING FOR PRINT
+   ========================================================= */
+
+function escapeHtml(text) {
+
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 
 }
 
