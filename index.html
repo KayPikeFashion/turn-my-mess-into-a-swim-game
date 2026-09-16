@@ -520,8 +520,6 @@ textarea::placeholder {
 }
 
 
-/* Little status message above the fish */
-
 #loadingMessage {
   min-height: 22px;
 
@@ -534,8 +532,6 @@ textarea::placeholder {
   font-weight: bold;
 }
 
-
-/* The actual swimming lane */
 
 .fishTank {
   position: relative;
@@ -556,8 +552,6 @@ textarea::placeholder {
     );
 }
 
-
-/* Subtle moving water lines */
 
 .fishTank::before,
 .fishTank::after {
@@ -1393,30 +1387,52 @@ const SpeechRecognition =
   window.SpeechRecognition ||
   window.webkitSpeechRecognition;
 
+
 let recognition = null;
+
+
+/*
+  "recording" means the user WANTS the microphone running.
+
+  "recognitionActive" means the browser currently has an
+  active speech-recognition session.
+*/
 
 let recording = false;
 
-let finalTranscript = "";
-
-/*
-  Mobile browsers can sometimes send the same speech result
-  more than once, especially when continuous recognition
-  restarts.
-
-  We keep track of how many final results we have already
-  processed so we never add the same result twice.
-*/
-
-let processedFinalResults = 0;
-
-/*
-  Prevents a recognition session from being restarted while
-  another start/stop operation is still happening.
-*/
+let recognitionActive = false;
 
 let recognitionStarting = false;
-let recognitionStopping = false;
+
+
+/*
+  Mobile browsers sometimes need a short pause between
+  recognition sessions.
+*/
+
+let restartTimer = null;
+
+
+/*
+  This is the permanent transcript.
+
+  It contains only speech that has already been finalized.
+*/
+
+let finalTranscript = "";
+
+
+/*
+  These belong ONLY to the current recognition session.
+
+  They are cleared every time a new recognition session
+  begins.
+*/
+
+let sessionFinalTranscript = "";
+
+let sessionInterimTranscript = "";
+
 
 /* =========================================================
    AI LOADING / RETRY VARIABLES
@@ -1447,6 +1463,7 @@ function getDeviceType() {
     navigator.vendor ||
     window.opera;
 
+
   const isIOS =
     /iPad|iPhone|iPod/.test(ua) ||
     (
@@ -1454,16 +1471,20 @@ function getDeviceType() {
       navigator.maxTouchPoints > 1
     );
 
+
   const isAndroid =
     /Android/i.test(ua);
+
 
   if (isIOS) {
     return "ios";
   }
 
+
   if (isAndroid) {
     return "android";
   }
+
 
   return "desktop";
 
@@ -1476,25 +1497,31 @@ function getBrowserType() {
     navigator.userAgent ||
     "";
 
+
   if (/Edg/i.test(ua)) {
     return "edge";
   }
+
 
   if (/Firefox/i.test(ua)) {
     return "firefox";
   }
 
+
   if (/CriOS/i.test(ua)) {
     return "chrome-ios";
   }
+
 
   if (/Chrome/i.test(ua)) {
     return "chrome";
   }
 
+
   if (/Safari/i.test(ua)) {
     return "safari";
   }
+
 
   return "other";
 
@@ -1509,6 +1536,7 @@ function tryOpenSupportedBrowser() {
 
   const device =
     getDeviceType();
+
 
   const currentUrl =
     window.location.href;
@@ -1528,6 +1556,7 @@ function tryOpenSupportedBrowser() {
       cleanUrl +
       "#Intent;scheme=https;package=com.android.chrome;end";
 
+
     return;
 
   }
@@ -1539,6 +1568,7 @@ function tryOpenSupportedBrowser() {
       "Please open this page in Safari for voice input.\n\n" +
       "Copy this page address and paste it into Safari."
     );
+
 
     return;
 
@@ -1562,20 +1592,26 @@ function checkMicrophoneSupport() {
   const micButton =
     document.getElementById("micButton");
 
+
   const supportStatus =
     document.getElementById("supportStatus");
+
 
   const status =
     document.getElementById("status");
 
+
   const warning =
     document.getElementById("micWarning");
+
 
   const warningTitle =
     document.getElementById("warningTitle");
 
+
   const browserTip =
     document.getElementById("browserTip");
+
 
   const browserButton =
     document.getElementById("browserButton");
@@ -1590,23 +1626,30 @@ function checkMicrophoneSupport() {
     supportStatus.textContent =
       "Microphone ready";
 
+
     status.textContent =
       "Tap the microphone and start talking.";
+
 
     warning.style.display =
       "none";
 
+
     browserButton.style.display =
       "none";
+
 
     micButton.disabled =
       false;
 
+
     micButton.style.opacity =
       "1";
 
+
     micButton.style.cursor =
       "pointer";
+
 
     return true;
 
@@ -1616,14 +1659,18 @@ function checkMicrophoneSupport() {
   supportStatus.textContent =
     "Typing mode";
 
+
   warning.style.display =
     "block";
+
 
   micButton.disabled =
     true;
 
+
   micButton.style.opacity =
     "0.45";
+
 
   micButton.style.cursor =
     "not-allowed";
@@ -1634,19 +1681,24 @@ function checkMicrophoneSupport() {
     warningTitle.textContent =
       "🌊 Voice input isn't available in this browser.";
 
+
     browserTip.innerHTML =
       "You're on an iPhone or iPad. " +
       "<strong>Try opening this page in Safari</strong> " +
       "for voice input. You can still type your swim game idea below.";
 
+
     browserButton.textContent =
       "🌊 How to open in Safari";
+
 
     browserButton.style.display =
       "inline-block";
 
+
     status.textContent =
       "Typing mode — try Safari for voice input.";
+
 
     return false;
 
@@ -1658,19 +1710,24 @@ function checkMicrophoneSupport() {
     warningTitle.textContent =
       "🌊 Voice input isn't available in this browser.";
 
+
     browserTip.innerHTML =
       "You're on Android. " +
       "<strong>Try opening this page in Google Chrome</strong> " +
       "for voice input. You can still type your swim game idea below.";
 
+
     browserButton.textContent =
       "🌊 Open in Chrome";
+
 
     browserButton.style.display =
       "inline-block";
 
+
     status.textContent =
       "Typing mode — try Chrome for voice input.";
+
 
     return false;
 
@@ -1680,19 +1737,24 @@ function checkMicrophoneSupport() {
   warningTitle.textContent =
     "🌊 Voice input isn't available in this browser.";
 
+
   browserTip.innerHTML =
     "You can still type your swim game idea below. " +
     "<strong>Try Google Chrome</strong> " +
     "if you'd like to use your microphone.";
 
+
   browserButton.textContent =
     "🌊 Try another browser";
+
 
   browserButton.style.display =
     "inline-block";
 
+
   status.textContent =
     "Typing mode — try Chrome for voice input.";
+
 
   return false;
 
@@ -1709,41 +1771,93 @@ if (SpeechRecognition) {
     new SpeechRecognition();
 
 
+  /*
+    IMPORTANT MOBILE FIX
+
+    Instead of continuous=true, each recognition session
+    ends naturally.
+
+    If the user is still recording, onend starts a fresh
+    session.
+
+    This avoids the mobile browser repeatedly replaying
+    speech results during continuous recognition restarts.
+  */
+
   recognition.continuous =
-    true;
+    false;
+
 
   recognition.interimResults =
     true;
+
 
   recognition.lang =
     "en-CA";
 
 
+  /* =======================================================
+     RECOGNITION START
+     ======================================================= */
+
   recognition.onstart =
     function() {
 
-      recording =
+      recognitionActive =
         true;
+
+
+      recognitionStarting =
+        false;
+
+
+      /*
+        New recognition session.
+
+        Anything from the previous session has already been
+        committed by onend.
+      */
+
+      sessionFinalTranscript =
+        "";
+
+
+      sessionInterimTranscript =
+        "";
 
 
       document
         .getElementById("micButton")
-        .classList.add("recording");
+        .classList
+        .add("recording");
 
 
-      document.getElementById("status")
+      document
+        .getElementById("status")
         .textContent =
         "Listening… tell me your messy idea!";
 
     };
 
 
+  /* =======================================================
+     SPEECH RESULT
+     ======================================================= */
+
   recognition.onresult =
     function(event) {
 
-      let interimTranscript =
+      let interimText =
         "";
 
+
+      /*
+        Only process the results supplied by this event.
+
+        Final speech goes into the current session.
+
+        Interim speech is temporary.
+      */
 
       for (
         let i = event.resultIndex;
@@ -1751,20 +1865,22 @@ if (SpeechRecognition) {
         i++
       ) {
 
+        const result =
+          event.results[i];
+
+
         const transcript =
-          event.results[i][0].transcript;
+          result[0].transcript;
 
 
-        if (
-          event.results[i].isFinal
-        ) {
+        if (result.isFinal) {
 
-          finalTranscript +=
-            transcript + " ";
+          sessionFinalTranscript +=
+            transcript.trim() + " ";
 
         } else {
 
-          interimTranscript +=
+          interimText +=
             transcript;
 
         }
@@ -1772,11 +1888,33 @@ if (SpeechRecognition) {
       }
 
 
-      document.getElementById("mess").value =
-        finalTranscript + interimTranscript;
+      sessionInterimTranscript =
+        interimText;
+
+
+      /*
+        Display:
+
+        PERMANENT SPEECH
+        +
+        CURRENT SESSION FINAL SPEECH
+        +
+        CURRENT INTERIM SPEECH
+      */
+
+      document
+        .getElementById("mess")
+        .value =
+        finalTranscript +
+        sessionFinalTranscript +
+        sessionInterimTranscript;
 
     };
 
+
+  /* =======================================================
+     SPEECH ERROR
+     ======================================================= */
 
   recognition.onerror =
     function(event) {
@@ -1787,51 +1925,266 @@ if (SpeechRecognition) {
       );
 
 
+      /*
+        Permission problems should completely stop
+        recording.
+      */
+
       if (
-        event.error === "not-allowed"
+        event.error === "not-allowed" ||
+        event.error === "service-not-allowed"
       ) {
 
-        document.getElementById("status")
+        recording =
+          false;
+
+
+        recognitionStarting =
+          false;
+
+
+        clearTimeout(
+          restartTimer
+        );
+
+
+        document
+          .getElementById("micButton")
+          .classList
+          .remove("recording");
+
+
+        document
+          .getElementById("status")
           .textContent =
           "Microphone permission was blocked. You can still type below.";
 
-      } else if (
+
+        return;
+
+      }
+
+
+      /*
+        no-speech isn't fatal.
+
+        The browser simply didn't hear speech during this
+        particular session.
+
+        onend will restart it automatically.
+      */
+
+      if (
         event.error === "no-speech"
       ) {
 
-        document.getElementById("status")
+        document
+          .getElementById("status")
           .textContent =
-          "I didn't hear anything. Try again!";
+          "Still listening… keep talking!";
 
-      } else {
 
-        document.getElementById("status")
-          .textContent =
-          "Microphone issue: " +
-          event.error +
-          ". You can still type below.";
+        return;
 
       }
+
+
+      document
+        .getElementById("status")
+        .textContent =
+        "Microphone issue: " +
+        event.error +
+        ". You can still type below.";
 
     };
 
 
+  /* =======================================================
+     RECOGNITION END
+     ======================================================= */
+
   recognition.onend =
     function() {
 
-      if (recording) {
+      console.log(
+        "Speech recognition ended. Recording:",
+        recording
+      );
 
-        try {
 
-          recognition.start();
+      recognitionActive =
+        false;
 
-        } catch (e) {
 
-          console.log(e);
+      recognitionStarting =
+        false;
 
-        }
+
+      /*
+        COMMIT THE CURRENT SESSION
+
+        This happens before deciding whether to restart.
+
+        This means every recognition session gets committed
+        exactly once.
+      */
+
+      if (
+        sessionFinalTranscript
+      ) {
+
+        finalTranscript +=
+          sessionFinalTranscript;
 
       }
+
+
+      sessionFinalTranscript =
+        "";
+
+
+      sessionInterimTranscript =
+        "";
+
+
+      /*
+        Make textarea contain only permanent speech.
+      */
+
+      document
+        .getElementById("mess")
+        .value =
+        finalTranscript;
+
+
+      /*
+        USER STOPPED RECORDING
+
+        Do not restart.
+      */
+
+      if (!recording) {
+
+        document
+          .getElementById("micButton")
+          .classList
+          .remove("recording");
+
+
+        document
+          .getElementById("status")
+          .textContent =
+          "Idea captured! You can edit it below.";
+
+
+        return;
+
+      }
+
+
+      /*
+        BROWSER STOPPED RECOGNITION
+
+        The user still wants to record, so start a new
+        recognition session.
+
+        IMPORTANT:
+        We wait 250ms before restarting. This is especially
+        helpful on phones.
+      */
+
+      clearTimeout(
+        restartTimer
+      );
+
+
+      restartTimer =
+        setTimeout(
+          function() {
+
+            if (
+              !recording ||
+              recognitionActive ||
+              recognitionStarting
+            ) {
+
+              return;
+
+            }
+
+
+            recognitionStarting =
+              true;
+
+
+            try {
+
+              recognition.start();
+
+            } catch (e) {
+
+              recognitionStarting =
+                false;
+
+
+              console.log(
+                "Recognition restart failed:",
+                e
+              );
+
+
+              /*
+                If the phone still isn't ready, give it
+                another moment and try once more.
+              */
+
+              clearTimeout(
+                restartTimer
+              );
+
+
+              restartTimer =
+                setTimeout(
+                  function() {
+
+                    if (
+                      recording &&
+                      !recognitionActive &&
+                      !recognitionStarting
+                    ) {
+
+                      recognitionStarting =
+                        true;
+
+
+                      try {
+
+                        recognition.start();
+
+                      } catch (retryError) {
+
+                        recognitionStarting =
+                          false;
+
+
+                        console.log(
+                          "Recognition retry failed:",
+                          retryError
+                        );
+
+                      }
+
+                    }
+
+                  },
+                  400
+                );
+
+            }
+
+          },
+          250
+        );
 
     };
 
@@ -1846,7 +2199,8 @@ function toggleRecording() {
 
   if (!recognition) {
 
-    document.getElementById("status")
+    document
+      .getElementById("status")
       .textContent =
       "Voice input isn't supported here. You can type your idea below.";
 
@@ -1855,10 +2209,58 @@ function toggleRecording() {
   }
 
 
+  /*
+    START RECORDING
+  */
+
   if (!recording) {
 
+    /*
+      Cancel any old restart attempt.
+    */
+
+    clearTimeout(
+      restartTimer
+    );
+
+
+    /*
+      Whatever is already in the textarea becomes the
+      permanent starting text.
+
+      This means the user can type something first and then
+      continue speaking.
+    */
+
     finalTranscript =
-      document.getElementById("mess").value;
+      document
+        .getElementById("mess")
+        .value
+        .trim();
+
+
+    if (finalTranscript) {
+
+      finalTranscript +=
+        " ";
+
+    }
+
+
+    sessionFinalTranscript =
+      "";
+
+
+    sessionInterimTranscript =
+      "";
+
+
+    recording =
+      true;
+
+
+    recognitionStarting =
+      true;
 
 
     try {
@@ -1867,37 +2269,123 @@ function toggleRecording() {
 
     } catch (e) {
 
-      console.log(e);
+      recognitionStarting =
+        false;
+
+
+      console.log(
+        "Recognition start failed:",
+        e
+      );
+
+
+      /*
+        Sometimes a previous recognition session is still
+        closing. Give the browser a moment.
+      */
+
+      setTimeout(
+        function() {
+
+          if (
+            recording &&
+            !recognitionActive &&
+            !recognitionStarting
+          ) {
+
+            recognitionStarting =
+              true;
+
+
+            try {
+
+              recognition.start();
+
+            } catch (retryError) {
+
+              recognitionStarting =
+                false;
+
+
+              recording =
+                false;
+
+
+              console.log(
+                "Recognition retry failed:",
+                retryError
+              );
+
+
+              document
+                .getElementById("status")
+                .textContent =
+                "Couldn't start the microphone. You can still type below.";
+
+            }
+
+          }
+
+        },
+        400
+      );
 
     }
 
-  } else {
 
-    recording =
-      false;
-
-
-    try {
-
-      recognition.stop();
-
-    } catch (e) {
-
-      console.log(e);
-
-    }
-
-
-    document
-      .getElementById("micButton")
-      .classList.remove("recording");
-
-
-    document.getElementById("status")
-      .textContent =
-      "Idea captured! You can edit it below.";
+    return;
 
   }
+
+
+  /*
+    STOP RECORDING
+  */
+
+  recording =
+    false;
+
+
+  clearTimeout(
+    restartTimer
+  );
+
+
+  recognitionStarting =
+    false;
+
+
+  /*
+    Stop the current recognition session.
+
+    onend will commit any final speech and will see that
+    recording=false, so it will NOT restart.
+  */
+
+  try {
+
+    recognition.stop();
+
+  } catch (e) {
+
+    console.log(
+      "Recognition stop:",
+      e
+    );
+
+  }
+
+
+  document
+    .getElementById("micButton")
+    .classList
+    .remove("recording");
+
+
+  document
+    .getElementById("status")
+    .textContent =
+    "Idea captured! You can edit it below.";
 
 }
 
@@ -1919,25 +2407,23 @@ function startLoadingAnimation() {
     false;
 
 
-  document.getElementById("retryArea")
+  document
+    .getElementById("retryArea")
     .style.display =
     "none";
 
 
-  document.getElementById("loadingOcean")
+  document
+    .getElementById("loadingOcean")
     .style.display =
     "block";
 
 
-  document.getElementById("loadingFinished")
+  document
+    .getElementById("loadingFinished")
     .style.display =
     "none";
 
-
-  /*
-    Start immediately instead of waiting for
-    the first 700ms interval.
-  */
 
   updateLoadingMessage();
 
@@ -1998,14 +2484,16 @@ function updateLoadingMessage() {
   }
 
 
-  document.getElementById("loadingMessage")
+  document
+    .getElementById("loadingMessage")
     .textContent =
     message;
 
 
   /*
     At 30 seconds, offer a manual retry.
-    We never automatically send a second request.
+
+    We NEVER automatically send a second request.
   */
 
   if (
@@ -2017,12 +2505,14 @@ function updateLoadingMessage() {
       true;
 
 
-    document.getElementById("retryArea")
+    document
+      .getElementById("retryArea")
       .style.display =
       "block";
 
 
-    document.getElementById("status")
+    document
+      .getElementById("status")
       .textContent =
       "The fish have been swimming for a while. You can wait or try again.";
 
@@ -2043,6 +2533,7 @@ function stopLoadingAnimation() {
       loadingTimer
     );
 
+
     loadingTimer =
       null;
 
@@ -2057,25 +2548,23 @@ function stopLoadingAnimation() {
 
 function showGameSurfaced() {
 
-  document.getElementById("loadingFinished")
+  document
+    .getElementById("loadingFinished")
     .style.display =
     "block";
 
 
-  document.getElementById("loadingMessage")
+  document
+    .getElementById("loadingMessage")
     .textContent =
     "🎉 Your swim game is ready!";
 
 
-  /*
-    Give the "GAME SURFACED!" message a tiny moment
-    before the loading animation disappears.
-  */
-
   setTimeout(
     function() {
 
-      document.getElementById("loadingOcean")
+      document
+        .getElementById("loadingOcean")
         .style.display =
         "none";
 
@@ -2103,17 +2592,20 @@ function sendGameRequest(mess) {
     requestId;
 
 
-  document.getElementById("appsScriptMess")
+  document
+    .getElementById("appsScriptMess")
     .value =
     mess;
 
 
-  document.getElementById("appsScriptRequestId")
+  document
+    .getElementById("appsScriptRequestId")
     .value =
     requestId;
 
 
-  document.getElementById("appsScriptForm")
+  document
+    .getElementById("appsScriptForm")
     .submit();
 
 }
@@ -2126,16 +2618,19 @@ function sendGameRequest(mess) {
 function generateGame() {
 
   const mess =
-    document.getElementById("mess")
+    document
+      .getElementById("mess")
       .value
       .trim();
 
 
   if (!mess) {
 
-    document.getElementById("status")
+    document
+      .getElementById("status")
       .textContent =
       "Tell me your swim game idea first!";
+
 
     return;
 
@@ -2147,27 +2642,33 @@ function generateGame() {
 
 
   const generateButton =
-    document.getElementById("generateButton");
+    document
+      .getElementById("generateButton");
 
 
-  generateButton.classList.add("loading");
+  generateButton
+    .classList
+    .add("loading");
 
 
   generateButton.textContent =
     "🫧 Making a swim game…";
 
 
-  document.getElementById("status")
+  document
+    .getElementById("status")
     .textContent =
     "Creating your swim game…";
 
 
-  document.getElementById("resultCard")
+  document
+    .getElementById("resultCard")
     .style.display =
     "block";
 
 
-  document.getElementById("result")
+  document
+    .getElementById("result")
     .textContent =
     "";
 
@@ -2196,29 +2697,33 @@ function retryGame() {
 
 
   const generateButton =
-    document.getElementById(
-      "generateButton"
-    );
+    document
+      .getElementById("generateButton");
 
 
-  generateButton.classList.add("loading");
+  generateButton
+    .classList
+    .add("loading");
 
 
   generateButton.textContent =
     "🫧 Trying again…";
 
 
-  document.getElementById("status")
+  document
+    .getElementById("status")
     .textContent =
     "Sending the fish back out…";
 
 
-  document.getElementById("retryArea")
+  document
+    .getElementById("retryArea")
     .style.display =
     "none";
 
 
-  document.getElementById("result")
+  document
+    .getElementById("result")
     .textContent =
     "";
 
@@ -2275,8 +2780,7 @@ window.addEventListener(
 
 
     /*
-      Ignore responses belonging to an older
-      request, especially after Retry.
+      Ignore responses belonging to an older request.
     */
 
     if (
@@ -2288,6 +2792,7 @@ window.addEventListener(
         "Old request ignored."
       );
 
+
       return;
 
     }
@@ -2297,9 +2802,10 @@ window.addEventListener(
 
 
     const generateButton =
-      document.getElementById(
-        "generateButton"
-      );
+      document
+        .getElementById(
+          "generateButton"
+        );
 
 
     generateButton
@@ -2311,7 +2817,8 @@ window.addEventListener(
       "🫧 Turn My Mess Into A Swim Game";
 
 
-    document.getElementById("retryArea")
+    document
+      .getElementById("retryArea")
       .style.display =
       "none";
 
@@ -2322,31 +2829,33 @@ window.addEventListener(
 
     if (data.error) {
 
-      document.getElementById(
-        "loadingOcean"
-      ).style.display =
-      "none";
+      document
+        .getElementById("loadingOcean")
+        .style.display =
+        "none";
 
 
-      document.getElementById(
-        "result"
-      ).textContent =
-      "Something went wrong:\n\n" +
-      data.error;
+      document
+        .getElementById("result")
+        .textContent =
+        "Something went wrong:\n\n" +
+        data.error;
 
 
-      document.getElementById(
-        "status"
-      ).textContent =
-      "Let's try that again.";
+      document
+        .getElementById("status")
+        .textContent =
+        "Let's try that again.";
 
 
-      document.getElementById("retryArea")
+      document
+        .getElementById("retryArea")
         .style.display =
         "block";
 
 
-      document.getElementById("retryMessage")
+      document
+        .getElementById("retryMessage")
         .textContent =
         "The swim game couldn't be created. You can try the request again.";
 
@@ -2367,17 +2876,23 @@ window.addEventListener(
     showGameSurfaced();
 
 
-    document.getElementById(
-      "result"
-    ).textContent =
-    data.result ||
-    "No result was returned.";
+    /*
+      IMPORTANT:
+
+      Apps Script returns the generated game as "result".
+    */
+
+    document
+      .getElementById("result")
+      .textContent =
+      data.result ||
+      "No result was returned.";
 
 
-    document.getElementById(
-      "status"
-    ).textContent =
-    "Game created! Dive in!";
+    document
+      .getElementById("status")
+      .textContent =
+      "Game created! Dive in!";
 
   }
 );
@@ -2390,18 +2905,18 @@ window.addEventListener(
 function copyResult() {
 
   const text =
-    document.getElementById(
-      "result"
-    ).textContent;
+    document
+      .getElementById("result")
+      .textContent;
 
 
   navigator.clipboard
     .writeText(text);
 
 
-  document.getElementById(
-    "status"
-  ).textContent =
+  document
+    .getElementById("status")
+    .textContent =
     "Copied! Ready to share.";
 
 }
@@ -2414,9 +2929,9 @@ function copyResult() {
 function downloadResult() {
 
   const text =
-    document.getElementById(
-      "result"
-    ).textContent;
+    document
+      .getElementById("result")
+      .textContent;
 
 
   const blob =
@@ -2450,9 +2965,9 @@ function downloadResult() {
   URL.revokeObjectURL(url);
 
 
-  document.getElementById(
-    "status"
-  ).textContent =
+  document
+    .getElementById("status")
+    .textContent =
     "Swim game downloaded!";
 
 }
@@ -2465,9 +2980,9 @@ function downloadResult() {
 async function shareResult() {
 
   const text =
-    document.getElementById(
-      "result"
-    ).textContent;
+    document
+      .getElementById("result")
+      .textContent;
 
 
   if (navigator.share) {
@@ -2512,9 +3027,9 @@ async function shareResult() {
 function printResult() {
 
   const text =
-    document.getElementById(
-      "result"
-    ).textContent;
+    document
+      .getElementById("result")
+      .textContent;
 
 
   const printWindow =
@@ -2557,6 +3072,7 @@ function printResult() {
 
   printWindow.document.close();
 
+
   printWindow.print();
 
 }
@@ -2569,9 +3085,9 @@ function printResult() {
 function saveResult() {
 
   const text =
-    document.getElementById(
-      "result"
-    ).textContent;
+    document
+      .getElementById("result")
+      .textContent;
 
 
   localStorage.setItem(
@@ -2596,31 +3112,84 @@ function clearResult() {
   stopLoadingAnimation();
 
 
-  document.getElementById(
-    "mess"
-  ).value = "";
+  /*
+    Stop microphone completely if the user clears while
+    recording.
+  */
+
+  recording =
+    false;
 
 
-  document.getElementById(
-    "result"
-  ).textContent = "";
+  clearTimeout(
+    restartTimer
+  );
 
 
-  document.getElementById(
-    "resultCard"
-  ).style.display =
+  if (recognition) {
+
+    try {
+
+      recognition.stop();
+
+    } catch (e) {
+
+      console.log(e);
+
+    }
+
+  }
+
+
+  recognitionActive =
+    false;
+
+
+  recognitionStarting =
+    false;
+
+
+  sessionFinalTranscript =
+    "";
+
+
+  sessionInterimTranscript =
+    "";
+
+
+  document
+    .getElementById("micButton")
+    .classList
+    .remove("recording");
+
+
+  document
+    .getElementById("mess")
+    .value =
+    "";
+
+
+  document
+    .getElementById("result")
+    .textContent =
+    "";
+
+
+  document
+    .getElementById("resultCard")
+    .style.display =
     "none";
 
 
-  document.getElementById(
-    "loadingOcean"
-  ).style.display =
+  document
+    .getElementById("loadingOcean")
+    .style.display =
     "none";
 
 
-  document.getElementById(
-    "retryArea"
-  ).style.display =
+  document
+    .getElementById("retryArea")
+    .style.display =
     "none";
 
 
@@ -2640,9 +3209,9 @@ function clearResult() {
     false;
 
 
-  document.getElementById(
-    "status"
-  ).textContent =
+  document
+    .getElementById("status")
+    .textContent =
     "Ready for your next messy idea!";
 
 
