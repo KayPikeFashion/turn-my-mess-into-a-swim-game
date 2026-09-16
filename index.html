@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Turn My Mess Into a Swim Game</title>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #101820;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 30px;
+      margin: 10px 0 5px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #b8c5cc;
+      font-size: 16px;
+      margin-bottom: 25px;
+      line-height: 1.4;
+    }
+
+    .mic-area {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    #micButton {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      border: none;
+      background: #e94b35;
+      color: white;
+      font-size: 46px;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.35);
+      transition: transform 0.15s, background 0.15s;
+    }
+
+    #micButton:active {
+      transform: scale(0.94);
+    }
+
+    #micButton.recording {
+      background: #ff2d20;
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.07);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    #micStatus {
+      margin-top: 12px;
+      color: #b8c5cc;
+      min-height: 22px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin: 20px 0 8px;
+      font-size: 16px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      resize: vertical;
+      padding: 15px;
+      border-radius: 12px;
+      border: 2px solid #39454d;
+      background: #1b252c;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #45b7ff;
+    }
+
+    .generate {
+      width: 100%;
+      margin-top: 15px;
+      padding: 17px;
+      border: none;
+      border-radius: 12px;
+      background: #35b95c;
+      color: white;
+      font-size: 19px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .generate:disabled {
+      background: #53605a;
+      cursor: wait;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .small-button {
+      flex: 1;
+      min-width: 100px;
+      padding: 12px;
+      border: none;
+      border-radius: 9px;
+      background: #303c44;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .small-button:active {
+      transform: scale(0.97);
+    }
+
+    #status {
+      text-align: center;
+      margin: 18px 0;
+      min-height: 22px;
+      color: #b8c5cc;
+    }
+
+    .result-card {
+      margin-top: 25px;
+      padding: 20px;
+      background: #182228;
+      border-radius: 14px;
+      border: 1px solid #35434b;
+    }
+
+    .result-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    #result {
+      white-space: pre-wrap;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .hint {
+      margin-top: 15px;
+      font-size: 13px;
+      color: #91a0a8;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 500px) {
+
+      body {
+        padding: 15px;
+      }
+
+      h1 {
+        font-size: 25px;
+      }
+
+      #micButton {
+        width: 100px;
+        height: 100px;
+      }
+
+      textarea {
+        min-height: 250px;
+      }
+
+    }
+
+  </style>
+</head>
+
+
+<body>
+
+  <div class="container">
+
+    <h1>Turn My Mess Into a Swim Game</h1>
+
+    <div class="subtitle">
+      Have a half-formed game in your head?<br>
+      Tell us your mess. We'll turn it into something another instructor can run.
+    </div>
+
+
+    <div class="mic-area">
+
+      <button id="micButton" type="button" onclick="toggleRecording()">
+        🎙
+      </button>
+
+      <div id="micStatus">
+        Click the microphone and start talking.
+      </div>
+
+    </div>
+
+
+    <label for="mess">
+      Click the microphone above and record your mess,
+      or copy/paste your mess in this text field.
+    </label>
+
+
+    <textarea
+      id="mess"
+      placeholder="Tell us your messy swim game idea...
+
+For example:
+
+Okay, so I have them all at the wall and I tell them they're going to be sharks...
+
+I don't really know how to explain it but basically...
+
+You can be as messy as you want!"
+    ></textarea>
+
+
+    <button
+      id="generateButton"
+      class="generate"
+      type="button"
+      onclick="generateGame()"
+    >
+      TURN MY MESS INTO A SWIM GAME
+    </button>
+
+
+    <div id="status"></div>
+
+
+    <div id="resultCard" class="result-card" style="display:none;">
+
+      <div class="result-title">
+        Your Shareable Swim Game
+      </div>
+
+      <div id="result"></div>
+
+
+      <div class="buttons">
+
+        <button class="small-button" onclick="copyResult()">
+          Copy
+        </button>
+
+        <button class="small-button" onclick="downloadResult()">
+          Download
+        </button>
+
+        <button class="small-button" onclick="shareResult()">
+          Share
+        </button>
+
+        <button class="small-button" onclick="printResult()">
+          Print
+        </button>
+
+        <button class="small-button" onclick="saveResult()">
+          Save
+        </button>
+
+        <button class="small-button" onclick="clearAll()">
+          Clear
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div class="hint">
+      Your speech is converted to text in your browser.
+      The audio itself is not saved by this tool.
+    </div>
+
+  </div>
+
+
+<script>
+
+  /*
+   * ============================
+   * SPEECH RECOGNITION
+   * ============================
+   */
+
+  let recognition = null;
+  let isRecording = false;
+  let finalTranscript = "";
+
+
+  function setupSpeechRecognition() {
+
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+
+    if (!SpeechRecognition) {
+
+      document.getElementById("micStatus").innerText =
+        "Live speech recognition isn't available in this browser. Chrome or Edge is recommended.";
+
+      return false;
+    }
+
+
+    recognition = new SpeechRecognition();
+
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-CA";
+
+
+    recognition.onstart = function() {
+
+      isRecording = true;
+
+      document
+        .getElementById("micButton")
+        .classList.add("recording");
+
+      document.getElementById("micStatus").innerText =
+        "Recording... speak your messy game idea. Click the microphone again when you're finished.";
+
+    };
+
+
+    recognition.onresult = function(event) {
+
+      let interimTranscript = "";
+
+
+      for (
+        let i = event.resultIndex;
+        i < event.results.length;
+        i++
+      ) {
+
+        const transcript =
+          event.results[i][0].transcript;
+
+
+        if (event.results[i].isFinal) {
+
+          finalTranscript += transcript + " ";
+
+        } else {
+
+          interimTranscript += transcript;
+
+        }
+
+      }
+
+
+      document.getElementById("mess").value =
+        finalTranscript + interimTranscript;
+
+    };
+
+
+    recognition.onerror = function(event) {
+
+      console.log(
+        "Speech recognition error:",
+        event.error
+      );
+
+
+      if (event.error === "not-allowed") {
+
+        document.getElementById("micStatus").innerText =
+          "Microphone permission was blocked. Please allow microphone access for this site.";
+
+      } else if (event.error === "no-speech") {
+
+        document.getElementById("micStatus").innerText =
+          "I didn't hear anything. Click the microphone and try again.";
+
+      } else {
+
+        document.getElementById("micStatus").innerText =
+          "Speech recognition had a problem. Please try again.";
+
+      }
+
+
+      isRecording = false;
+
+      document
+        .getElementById("micButton")
+        .classList.remove("recording");
+
+    };
+
+
+    recognition.onend = function() {
+
+      /*
+       * Chrome can occasionally end a recognition session
+       * even though the user is still talking.
+       *
+       * If the user has NOT clicked the button to stop,
+       * automatically restart it.
+       */
+
+      if (isRecording) {
+
+        try {
+
+          recognition.start();
+
+        } catch (e) {
+
+          console.log(
+            "Speech recognition restart:",
+            e
+          );
+
+        }
+
+      }
+
+    };
+
+
+    return true;
+  }
+
+
+  function toggleRecording() {
+
+    if (!recognition) {
+
+      if (!setupSpeechRecognition()) {
+        return;
+      }
+
+    }
+
+
+    if (isRecording) {
+
+      stopRecording();
+
+      return;
+
+    }
+
+
+    /*
+     * Keep anything already typed in the box.
+     */
+
+    finalTranscript =
+      document.getElementById("mess").value.trim();
+
+
+    if (finalTranscript.length > 0) {
+
+      finalTranscript += " ";
+
+    }
+
+
+    try {
+
+      recognition.start();
+
+    } catch (e) {
+
+      console.log(
+        "Could not start speech recognition:",
+        e
+      );
+
+    }
+
+  }
+
+
+  function stopRecording() {
+
+    isRecording = false;
+
+    document
+      .getElementById("micButton")
+      .classList.remove("recording");
+
+
+    document.getElementById("micStatus").innerText =
+      "Recording stopped.";
+
+
+    if (recognition) {
+
+      try {
+
+        recognition.stop();
+
+      } catch (e) {
+
+        console.log(e);
+
+      }
+
+    }
+
+  }
+
+
+
+  /*
+   * ============================
+   * GENERATE
+   * ============================
+   *
+   * IMPORTANT:
+   * This URL will point to your existing
+   * Google Apps Script web app.
+   *
+   * We will connect this after the microphone
+   * is confirmed working.
+   */
+
+  const APPS_SCRIPT_URL =
+    "https://script.google.com/macros/s/AKfycbxf4n39tX-1olKwTeZIvg34J_jTHbDbBu8gfRu3pgsdWaL3sih3mNZwJPxrugHCGvpRvw/exec";
+
+
+  function generateGame() {
+
+    const mess =
+      document.getElementById("mess").value.trim();
+
+
+    if (!mess) {
+
+      document.getElementById("status").innerText =
+        "Tell us your game idea first.";
+
+      return;
+
+    }
+
+
+    stopRecording();
+
+
+    const button =
+      document.getElementById("generateButton");
+
+
+    button.disabled = true;
+
+    button.innerText =
+      "TURNING YOUR MESS INTO A GAME...";
+
+
+    document.getElementById("status").innerText =
+      "The swim-game editor is working...";
+
+
+    document.getElementById("resultCard").style.display =
+      "none";
+
+
+    /*
+     * This connection will be completed after
+     * we test the microphone.
+     */
+
+    document.getElementById("status").innerText =
+      "The microphone is working, but the Gemini connection is being connected next.";
+
+    button.disabled = false;
+
+    button.innerText =
+      "TURN MY MESS INTO A SWIM GAME";
+
+  }
+
+
+
+  /*
+   * ============================
+   * COPY
+   * ============================
+   */
+
+  function copyResult() {
+
+    const text =
+      document.getElementById("result").innerText;
+
+
+    navigator.clipboard.writeText(text)
+
+      .then(function() {
+
+        document.getElementById("status").innerText =
+          "Copied!";
+
+      })
+
+      .catch(function() {
+
+        document.getElementById("status").innerText =
+          "Copy failed. You can select the text manually.";
+
+      });
+
+  }
+
+
+
+  /*
+   * ============================
+   * DOWNLOAD
+   * ============================
+   */
+
+  function downloadResult() {
+
+    const text =
+      document.getElementById("result").innerText;
+
+
+    const blob =
+      new Blob([text], {
+        type: "text/plain"
+      });
+
+
+    const url =
+      URL.createObjectURL(blob);
+
+
+    const a =
+      document.createElement("a");
+
+
+    a.href = url;
+
+    a.download =
+      "swim-game.txt";
+
+
+    a.click();
+
+
+    URL.revokeObjectURL(url);
+
+  }
+
+
+
+  /*
+   * ============================
+   * SHARE
+   * ============================
+   */
+
+  function shareResult() {
+
+    const text =
+      document.getElementById("result").innerText;
+
+
+    if (navigator.share) {
+
+      navigator.share({
+        title: "My Swim Game",
+        text: text
+      });
+
+    } else {
+
+      navigator.clipboard.writeText(text);
+
+
+      document.getElementById("status").innerText =
+        "Sharing isn't supported here, so the game was copied instead.";
+
+    }
+
+  }
+
+
+
+  /*
+   * ============================
+   * PRINT
+   * ============================
+   */
+
+  function printResult() {
+
+    const text =
+      document.getElementById("result").innerText;
+
+
+    const printWindow =
+      window.open("", "_blank");
+
+
+    printWindow.document.write(
+      "<html>" +
+      "<head>" +
+      "<title>Swim Game</title>" +
+      "<style>" +
+      "body{font-family:Arial,sans-serif;padding:30px;line-height:1.5;white-space:pre-wrap;}" +
+      "</style>" +
+      "</head>" +
+      "<body>" +
+      text.replace(/</g, "&lt;").replace(/>/g, "&gt;") +
+      "</body>" +
+      "</html>"
+    );
+
+
+    printWindow.document.close();
+
+    printWindow.focus();
+
+    printWindow.print();
+
+  }
+
+
+
+  /*
+   * ============================
+   * SAVE
+   * ============================
+   */
+
+  function saveResult() {
+
+    const text =
+      document.getElementById("result").innerText;
+
+
+    if (!text) {
+
+      document.getElementById("status").innerText =
+        "There isn't a game to save yet.";
+
+      return;
+
+    }
+
+
+    localStorage.setItem(
+      "savedSwimGame",
+      text
+    );
+
+
+    document.getElementById("status").innerText =
+      "Saved on this device.";
+
+  }
+
+
+
+  /*
+   * ============================
+   * CLEAR
+   * ============================
+   */
+
+  function clearAll() {
+
+    stopRecording();
+
+
+    document.getElementById("mess").value = "";
+
+    document.getElementById("result").innerText = "";
+
+    document.getElementById("resultCard").style.display =
+      "none";
+
+    document.getElementById("status").innerText = "";
+
+    finalTranscript = "";
+
+    document.getElementById("micStatus").innerText =
+      "Click the microphone and start talking.";
+
+  }
+
+
+  /*
+   * Set up speech recognition when page loads.
+   */
+
+  window.addEventListener(
+    "load",
+    function() {
+
+      setupSpeechRecognition();
+
+    }
+  );
+
+</script>
+
+</body>
+</html>
