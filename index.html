@@ -179,9 +179,7 @@ button {
 
 
 <!--
-  This hidden iframe receives the Apps Script response.
-  It lets the GitHub page communicate with Apps Script
-  without using fetch/CORS.
+  Hidden iframe used to receive the Apps Script response.
 -->
 <iframe
   id="connectionFrame"
@@ -284,7 +282,10 @@ if (SpeechRecognition) {
 
   recognition.onerror = function(event) {
 
-    console.log("Speech recognition error:", event.error);
+    console.log(
+      "Speech recognition error:",
+      event.error
+    );
 
     if (event.error === "not-allowed") {
 
@@ -417,8 +418,8 @@ function generateGame() {
 
 
   /*
-   * Create a unique ID so we know which response belongs
-   * to this request.
+   * Create a unique ID so we know which response
+   * belongs to this request.
    */
 
   const requestId =
@@ -448,6 +449,8 @@ function generateGame() {
 
 window.addEventListener("message", function(event) {
 
+  console.log("Message received:", event.data);
+
   const data = event.data;
 
 
@@ -466,25 +469,52 @@ window.addEventListener("message", function(event) {
 
 
   if (data.requestId !== currentRequestId) {
+
+    console.log("Request ID mismatch.");
+
     return;
+
   }
-
-
-  document.getElementById("result").textContent =
-    data.text;
-
-
-  document.getElementById("status").textContent =
-    "Game created!";
 
 
   const generateButton =
     document.getElementById("generateButton");
 
+
   generateButton.classList.remove("loading");
 
   generateButton.textContent =
     "Turn My Mess Into A Swim Game";
+
+
+  /*
+   * Handle an error returned by Apps Script.
+   */
+
+  if (data.error) {
+
+    document.getElementById("result").textContent =
+      "Error: " + data.error;
+
+    document.getElementById("status").textContent =
+      "Something went wrong.";
+
+    return;
+
+  }
+
+
+  /*
+   * IMPORTANT:
+   * Apps Script sends the AI response as "result".
+   */
+
+  document.getElementById("result").textContent =
+    data.result || "No result was returned.";
+
+
+  document.getElementById("status").textContent =
+    "Game created!";
 
 });
 
