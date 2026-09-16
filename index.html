@@ -495,6 +495,74 @@ textarea::placeholder {
 
 
 /* =========================================================
+   RETRY AREA
+   ========================================================= */
+
+#retryArea {
+  display: none;
+
+  margin-top: 16px;
+
+  padding: 14px;
+
+  border-radius: 16px;
+
+  background: rgba(255, 213, 94, 0.12);
+
+  border: 2px solid rgba(255, 221, 112, 0.4);
+
+  color: #fff4c2;
+
+  text-align: center;
+
+  line-height: 1.4;
+}
+
+#retryMessage {
+  font-size: 14px;
+
+  margin-bottom: 10px;
+}
+
+#retryButton {
+  background:
+    linear-gradient(
+      180deg,
+      #ffe477 0%,
+      #ffc83d 100%
+    );
+
+  color: #12365a;
+
+  font-weight: bold;
+
+  font-size: 15px;
+
+  padding: 10px 18px;
+
+  border-radius: 12px;
+
+  border: 2px solid #fff1a8;
+
+  box-shadow:
+    0 4px 0 #c8921d;
+
+  cursor: pointer;
+}
+
+#retryButton:hover {
+  transform: translateY(-2px);
+}
+
+#retryButton:active {
+  transform: translateY(2px);
+
+  box-shadow:
+    0 2px 0 #c8921d;
+}
+
+
+/* =========================================================
    RESULT CARD
    ========================================================= */
 
@@ -607,6 +675,21 @@ textarea::placeholder {
 
 .actions button:active {
   transform: translateY(2px);
+}
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.footer {
+  margin-top: 28px;
+
+  color: rgba(217,247,255,0.72);
+
+  font-size: 13px;
+
+  line-height: 1.4;
 }
 
 
@@ -797,6 +880,23 @@ For example:
 
     </button>
 
+
+    <!-- Retry -->
+
+    <div id="retryArea">
+
+      <div id="retryMessage">
+        This is taking longer than usual. The first request may still be working.
+      </div>
+
+      <button
+        id="retryButton"
+        onclick="retryGame()">
+        🫧 Try Again
+      </button>
+
+    </div>
+
   </div>
 
 
@@ -846,6 +946,13 @@ For example:
 
     </div>
 
+  </div>
+
+
+  <!-- Footer -->
+
+  <div class="footer">
+    W.I.P. — please send feedback to Coach Kay
   </div>
 
 
@@ -901,6 +1008,31 @@ let recognition = null;
 let recording = false;
 
 let finalTranscript = "";
+
+
+/* =========================================================
+   AI LOADING / RETRY VARIABLES
+   ========================================================= */
+
+let loadingTimer = null;
+
+let loadingStartTime = 0;
+
+let lastMess = "";
+
+let activeRequestId = "";
+
+let retryAvailable = false;
+
+
+/*
+  We give the original request 30 seconds before
+  showing the Retry button.
+
+  We do NOT automatically send another request.
+*/
+
+const RETRY_TIMEOUT = 30000;
 
 
 /* =========================================================
@@ -1411,6 +1543,190 @@ function toggleRecording() {
 
 
 /* =========================================================
+   START LOADING ANIMATION
+   ========================================================= */
+
+function startLoadingAnimation() {
+
+  stopLoadingAnimation();
+
+
+  loadingStartTime =
+    Date.now();
+
+
+  retryAvailable =
+    false;
+
+
+  document.getElementById("retryArea")
+    .style.display =
+    "none";
+
+
+  let dotCount =
+    1;
+
+
+  /*
+    Change the dots every 700 milliseconds.
+  */
+
+  loadingTimer =
+    setInterval(
+      function() {
+
+        const elapsed =
+          Date.now() -
+          loadingStartTime;
+
+
+        /*
+          Change the actual loading message
+          based on how long we've been waiting.
+        */
+
+        let message;
+
+
+        if (elapsed < 5000) {
+
+          message =
+            "🐠 Swimming through your idea";
+
+        } else if (elapsed < 10000) {
+
+          message =
+            "🐠 Still swimming";
+
+        } else if (elapsed < 15000) {
+
+          message =
+            "🐳 Your game is taking shape";
+
+        } else if (elapsed < RETRY_TIMEOUT) {
+
+          message =
+            "🌊 Still working — thanks for waiting";
+
+        } else {
+
+          message =
+            "🌊 This is taking longer than usual";
+
+        }
+
+
+        /*
+          Cycle through:
+          .
+          ..
+          ...
+        */
+
+        dotCount++;
+
+        if (dotCount > 3) {
+          dotCount = 1;
+        }
+
+
+        const dots =
+          ".".repeat(dotCount);
+
+
+        document.getElementById("result")
+          .textContent =
+          message + dots;
+
+
+        /*
+          At 30 seconds, offer a manual retry.
+          We do NOT automatically send another request.
+        */
+
+        if (
+          elapsed >= RETRY_TIMEOUT &&
+          !retryAvailable
+        ) {
+
+          retryAvailable =
+            true;
+
+
+          document.getElementById("retryArea")
+            .style.display =
+            "block";
+
+
+          document.getElementById("status")
+            .textContent =
+            "This is taking longer than usual. You can wait or try again.";
+
+        }
+
+      },
+      700
+    );
+
+}
+
+
+/* =========================================================
+   STOP LOADING ANIMATION
+   ========================================================= */
+
+function stopLoadingAnimation() {
+
+  if (loadingTimer) {
+
+    clearInterval(
+      loadingTimer
+    );
+
+    loadingTimer =
+      null;
+
+  }
+
+}
+
+
+/* =========================================================
+   SEND GAME REQUEST
+   ========================================================= */
+
+function sendGameRequest(mess) {
+
+  const requestId =
+    Date.now().toString() +
+    Math.random()
+      .toString(36)
+      .substring(2);
+
+
+  activeRequestId =
+    requestId;
+
+
+  document.getElementById("appsScriptMess")
+    .value =
+    mess;
+
+
+  document.getElementById("appsScriptRequestId")
+    .value =
+    requestId;
+
+
+  document.getElementById("appsScriptForm")
+    .submit();
+
+
+}
+
+
+/* =========================================================
    GENERATE GAME
    ========================================================= */
 
@@ -1431,6 +1747,10 @@ function generateGame() {
     return;
 
   }
+
+
+  lastMess =
+    mess;
 
 
   const generateButton =
@@ -1456,28 +1776,74 @@ function generateGame() {
 
   document.getElementById("result")
     .textContent =
-    "🐠 Swimming through your idea…";
+    "🐠 Swimming through your idea.";
 
 
-  const requestId =
-    Date.now().toString() +
-    Math.random()
-      .toString(36)
-      .substring(2);
+  startLoadingAnimation();
 
 
-  document.getElementById("appsScriptMess")
-    .value =
-    mess;
+  sendGameRequest(
+    mess
+  );
+
+}
 
 
-  document.getElementById("appsScriptRequestId")
-    .value =
-    requestId;
+/* =========================================================
+   RETRY GAME
+   ========================================================= */
+
+function retryGame() {
+
+  if (!lastMess) {
+
+    return;
+
+  }
 
 
-  document.getElementById("appsScriptForm")
-    .submit();
+  const generateButton =
+    document.getElementById(
+      "generateButton"
+    );
+
+
+  /*
+    Start a completely new request ID.
+
+    This means if the original request eventually
+    comes back, it will be ignored because it belongs
+    to the old request.
+  */
+
+  generateButton.classList.add("loading");
+
+
+  generateButton.textContent =
+    "🫧 Trying again…";
+
+
+  document.getElementById("status")
+    .textContent =
+    "Trying your swim game again…";
+
+
+  document.getElementById("retryArea")
+    .style.display =
+    "none";
+
+
+  document.getElementById("result")
+    .textContent =
+    "🐠 Swimming through your idea.";
+
+
+  startLoadingAnimation();
+
+
+  sendGameRequest(
+    lastMess
+  );
 
 }
 
@@ -1523,18 +1889,27 @@ window.addEventListener(
         .value;
 
 
+    /*
+      Ignore responses belonging to an older
+      request, especially if the user has already
+      pressed Retry.
+    */
+
     if (
       data.requestId !==
       currentRequestId
     ) {
 
       console.log(
-        "Request ID mismatch."
+        "Old request ignored."
       );
 
       return;
 
     }
+
+
+    stopLoadingAnimation();
 
 
     const generateButton =
@@ -1552,6 +1927,15 @@ window.addEventListener(
       "🫧 Turn My Mess Into A Swim Game";
 
 
+    document.getElementById("retryArea")
+      .style.display =
+      "none";
+
+
+    retryAvailable =
+      false;
+
+
     if (data.error) {
 
       document.getElementById(
@@ -1566,6 +1950,21 @@ window.addEventListener(
       ).textContent =
       "Let's try that again.";
 
+
+      document.getElementById("retryArea")
+        .style.display =
+        "block";
+
+
+      document.getElementById("retryMessage")
+        .textContent =
+        "The swim game couldn't be created. You can try the request again.";
+
+
+      retryAvailable =
+        true;
+
+
       return;
 
     }
@@ -1574,14 +1973,14 @@ window.addEventListener(
     document.getElementById(
       "result"
     ).textContent =
-      data.result ||
-      "No result was returned.";
+    data.result ||
+    "No result was returned.";
 
 
     document.getElementById(
       "status"
     ).textContent =
-      "Game created! Dive in!";
+    "Game created! Dive in!";
 
   }
 );
@@ -1797,6 +2196,9 @@ function saveResult() {
 
 function clearResult() {
 
+  stopLoadingAnimation();
+
+
   document.getElementById(
     "mess"
   ).value = "";
@@ -1813,8 +2215,26 @@ function clearResult() {
     "none";
 
 
+  document.getElementById(
+    "retryArea"
+  ).style.display =
+    "none";
+
+
   finalTranscript =
     "";
+
+
+  lastMess =
+    "";
+
+
+  activeRequestId =
+    "";
+
+
+  retryAvailable =
+    false;
 
 
   document.getElementById(
