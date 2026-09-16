@@ -8,6 +8,1600 @@
 
 <style>
 
+/* =========================================================
+   OCEAN THEME
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  color: white;
+  text-align: center;
+  overflow-x: hidden;
+
+  background:
+    radial-gradient(circle at 15% 20%, rgba(80, 200, 255, 0.25), transparent 25%),
+    radial-gradient(circle at 85% 10%, rgba(70, 160, 255, 0.2), transparent 25%),
+    linear-gradient(
+      180deg,
+      #0879b8 0%,
+      #075f9d 35%,
+      #063f78 70%,
+      #032d5c 100%
+    );
+}
+
+
+/* =========================================================
+   BUBBLES
+   ========================================================= */
+
+.bubble {
+  position: fixed;
+  bottom: -80px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.07);
+  pointer-events: none;
+  animation: floatBubble linear infinite;
+}
+
+.bubble.one {
+  width: 35px;
+  height: 35px;
+  left: 8%;
+  animation-duration: 13s;
+}
+
+.bubble.two {
+  width: 18px;
+  height: 18px;
+  left: 22%;
+  animation-duration: 9s;
+  animation-delay: 2s;
+}
+
+.bubble.three {
+  width: 55px;
+  height: 55px;
+  right: 8%;
+  animation-duration: 16s;
+  animation-delay: 1s;
+}
+
+.bubble.four {
+  width: 24px;
+  height: 24px;
+  right: 25%;
+  animation-duration: 11s;
+  animation-delay: 4s;
+}
+
+.bubble.five {
+  width: 12px;
+  height: 12px;
+  left: 45%;
+  animation-duration: 8s;
+  animation-delay: 1s;
+}
+
+@keyframes floatBubble {
+
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  50% {
+    transform: translateY(-50vh) translateX(25px);
+  }
+
+  100% {
+    transform: translateY(-115vh) translateX(-20px);
+    opacity: 0;
+  }
+
+}
+
+
+/* =========================================================
+   MAIN CONTAINER
+   ========================================================= */
+
+.container {
+  position: relative;
+  z-index: 2;
+
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 18px 50px;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.logoBubble {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 12px;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      #ffffff,
+      #bdefff 20%,
+      #54d7ff 55%,
+      #159bd0 100%
+    );
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 38px;
+
+  box-shadow:
+    0 8px 0 rgba(0,0,0,0.12),
+    0 12px 30px rgba(0,0,0,0.2);
+}
+
+
+h1 {
+  margin: 0;
+
+  font-size: clamp(30px, 7vw, 46px);
+  line-height: 1.05;
+
+  color: white;
+
+  text-shadow:
+    0 4px 0 rgba(0,60,110,0.35);
+}
+
+
+.subtitle {
+  margin-top: 12px;
+  margin-bottom: 25px;
+
+  color: #d9f7ff;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+
+/* =========================================================
+   OCEAN STATUS
+   ========================================================= */
+
+.oceanStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  background: rgba(0, 40, 80, 0.35);
+
+  border: 1px solid rgba(255,255,255,0.18);
+
+  padding: 7px 13px;
+
+  border-radius: 30px;
+
+  margin-bottom: 18px;
+
+  font-size: 13px;
+  font-weight: bold;
+
+  color: #dffaff;
+}
+
+.statusDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #62e6a5;
+  box-shadow: 0 0 8px rgba(98,230,165,0.7);
+}
+
+
+/* =========================================================
+   MICROPHONE
+   ========================================================= */
+
+#micButton {
+  width: 125px;
+  height: 125px;
+
+  border-radius: 50%;
+
+  border: 7px solid rgba(255,255,255,0.7);
+
+  background:
+    radial-gradient(
+      circle at 35% 28%,
+      #ff9c8b,
+      #ff6954 45%,
+      #e33e42 100%
+    );
+
+  color: white;
+
+  font-size: 52px;
+
+  cursor: pointer;
+
+  margin: 5px auto 16px;
+
+  display: block;
+
+  box-shadow:
+    0 9px 0 #b82f38,
+    0 15px 30px rgba(0,0,0,0.25);
+
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+
+#micButton:hover {
+  transform: translateY(-3px) scale(1.03);
+}
+
+#micButton:active {
+  transform: translateY(5px);
+
+  box-shadow:
+    0 3px 0 #b82f38,
+    0 8px 15px rgba(0,0,0,0.2);
+}
+
+
+#micButton.recording {
+  background:
+    radial-gradient(
+      circle at 35% 28%,
+      #8cffc0,
+      #35c978 50%,
+      #15985c 100%
+    );
+
+  box-shadow:
+    0 9px 0 #087547,
+    0 0 30px rgba(70,255,170,0.45);
+}
+
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+#status {
+  min-height: 25px;
+
+  color: #dff8ff;
+
+  margin-bottom: 17px;
+
+  font-size: 15px;
+  font-weight: bold;
+}
+
+
+/* =========================================================
+   MICROPHONE WARNING
+   ========================================================= */
+
+#micWarning {
+  display: none;
+
+  margin: 0 auto 18px;
+
+  max-width: 600px;
+
+  padding: 13px 16px;
+
+  border-radius: 16px;
+
+  background: rgba(255, 213, 94, 0.16);
+
+  border: 2px solid rgba(255, 221, 112, 0.55);
+
+  color: #fff4c2;
+
+  font-size: 14px;
+
+  line-height: 1.45;
+}
+
+#micWarning strong {
+  color: white;
+}
+
+
+/* =========================================================
+   IDEA CARD
+   ========================================================= */
+
+.ideaCard {
+  background: rgba(2, 42, 78, 0.68);
+
+  border: 2px solid rgba(255,255,255,0.16);
+
+  border-radius: 24px;
+
+  padding: 18px;
+
+  box-shadow:
+    0 15px 35px rgba(0,0,0,0.18);
+
+  backdrop-filter: blur(8px);
+}
+
+
+.ideaLabel {
+  text-align: left;
+
+  font-size: 14px;
+  font-weight: bold;
+
+  color: #b9f0ff;
+
+  margin: 0 0 8px 5px;
+}
+
+
+textarea {
+  width: 100%;
+
+  min-height: 180px;
+
+  background: #f4fcff;
+
+  color: #07385d;
+
+  border: 3px solid #8de4ff;
+
+  border-radius: 18px;
+
+  padding: 16px;
+
+  font-size: 17px;
+
+  line-height: 1.45;
+
+  resize: vertical;
+
+  outline: none;
+
+  font-family: Arial, sans-serif;
+
+  box-shadow:
+    inset 0 3px 8px rgba(0,50,90,0.12);
+
+  transition: border-color 0.2s;
+}
+
+textarea:focus {
+  border-color: #ffffff;
+}
+
+textarea::placeholder {
+  color: #6793aa;
+}
+
+
+/* =========================================================
+   GENERATE BUTTON
+   ========================================================= */
+
+#generateButton {
+  margin-top: 15px;
+
+  width: 100%;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffe477 0%,
+      #ffc83d 100%
+    );
+
+  color: #12365a;
+
+  font-weight: bold;
+
+  font-size: 19px;
+
+  padding: 15px 20px;
+
+  border-radius: 16px;
+
+  border: 3px solid #fff1a8;
+
+  box-shadow:
+    0 6px 0 #c8921d,
+    0 10px 20px rgba(0,0,0,0.18);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+
+#generateButton:hover {
+  transform: translateY(-2px);
+}
+
+#generateButton:active {
+  transform: translateY(4px);
+
+  box-shadow:
+    0 2px 0 #c8921d;
+}
+
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.loading {
+  opacity: 0.65;
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   RESULT CARD
+   ========================================================= */
+
+#resultCard {
+  display: none;
+
+  text-align: left;
+
+  margin-top: 28px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,0.98),
+      rgba(231,249,255,0.98)
+    );
+
+  color: #07385d;
+
+  border: 4px solid #71d9f7;
+
+  border-radius: 24px;
+
+  padding: 22px;
+
+  box-shadow:
+    0 14px 35px rgba(0,0,0,0.25);
+}
+
+
+.resultHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  margin-bottom: 15px;
+
+  color: #0879b8;
+
+  font-weight: bold;
+  font-size: 18px;
+}
+
+
+.resultBubble {
+  width: 30px;
+  height: 30px;
+
+  border-radius: 50%;
+
+  background: #71d9f7;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 16px;
+}
+
+
+#result {
+  white-space: pre-wrap;
+
+  line-height: 1.5;
+
+  font-size: 16px;
+}
+
+
+/* =========================================================
+   ACTION BUTTONS
+   ========================================================= */
+
+.actions {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 8px;
+
+  margin-top: 20px;
+
+  padding-top: 15px;
+
+  border-top: 2px dashed #a9ddea;
+}
+
+
+.actions button {
+  flex: 1;
+
+  min-width: 100px;
+
+  background: #0879b8;
+
+  color: white;
+
+  font-weight: bold;
+
+  border-radius: 11px;
+
+  box-shadow: 0 3px 0 #04547f;
+
+  transition: transform 0.12s;
+}
+
+.actions button:hover {
+  transform: translateY(-2px);
+}
+
+.actions button:active {
+  transform: translateY(2px);
+}
+
+
+/* =========================================================
+   HIDDEN CONNECTION FRAME
+   ========================================================= */
+
+#connectionFrame {
+  display: none;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 500px) {
+
+  body {
+    padding: 0;
+  }
+
+  .container {
+    padding: 22px 13px 40px;
+  }
+
+  h1 {
+    font-size: 34px;
+  }
+
+  .subtitle {
+    font-size: 15px;
+  }
+
+  #micButton {
+    width: 115px;
+    height: 115px;
+    font-size: 48px;
+  }
+
+  .ideaCard {
+    padding: 13px;
+    border-radius: 20px;
+  }
+
+  textarea {
+    min-height: 170px;
+    font-size: 16px;
+  }
+
+  #generateButton {
+    font-size: 17px;
+  }
+
+  #resultCard {
+    padding: 17px;
+  }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .bubble {
+    animation: none;
+  }
+
+  * {
+    scroll-behavior: auto !important;
+  }
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+
+<!-- Floating bubbles -->
+
+<div class="bubble one"></div>
+<div class="bubble two"></div>
+<div class="bubble three"></div>
+<div class="bubble four"></div>
+<div class="bubble five"></div>
+
+
+<div class="container">
+
+
+  <!-- Header -->
+
+  <div class="logoBubble">
+    🐠
+  </div>
+
+
+  <h1>
+    Turn My Mess Into<br>
+    a Swim Game
+  </h1>
+
+
+  <div class="subtitle">
+    Say it messy. We'll turn it into something teachable.
+  </div>
+
+
+  <!-- Microphone support status -->
+
+  <div class="oceanStatus">
+
+    <span class="statusDot"></span>
+
+    <span id="supportStatus">
+      Checking microphone…
+    </span>
+
+  </div>
+
+
+  <!-- Microphone -->
+
+  <button
+    id="micButton"
+    onclick="toggleRecording()"
+    aria-label="Start or stop recording">
+    🎤
+  </button>
+
+
+  <div id="status">
+    Checking your microphone…
+  </div>
+
+
+  <!-- Unsupported browser warning -->
+
+  <div id="micWarning">
+
+    <strong>🌊 Voice input isn't available here.</strong><br>
+
+    This browser doesn't support speech recognition.
+    You can still type your swim game idea below,
+    or try opening this page in a supported version of
+    Chrome or Safari.
+
+  </div>
+
+
+  <!-- Idea input -->
+
+  <div class="ideaCard">
+
+    <div class="ideaLabel">
+      YOUR MESSY GAME IDEA
+    </div>
+
+
+    <textarea
+      id="mess"
+      placeholder="Tell me anything… even if it's messy!
+
+For example:
+'Kids pretend they're rockets and kick from the wall to me. Maybe we could make them blast off…'"
+    ></textarea>
+
+
+    <button
+      id="generateButton"
+      onclick="generateGame()">
+
+      🫧 Turn My Mess Into A Swim Game
+
+    </button>
+
+  </div>
+
+
+  <!-- Result -->
+
+  <div id="resultCard">
+
+    <div class="resultHeader">
+
+      <div class="resultBubble">
+        🐳
+      </div>
+
+      Your Swim Game
+
+    </div>
+
+
+    <div id="result"></div>
+
+
+    <div class="actions">
+
+      <button onclick="copyResult()">
+        Copy
+      </button>
+
+      <button onclick="downloadResult()">
+        Download
+      </button>
+
+      <button onclick="shareResult()">
+        Share
+      </button>
+
+      <button onclick="printResult()">
+        Print
+      </button>
+
+      <button onclick="saveResult()">
+        Save
+      </button>
+
+      <button onclick="clearResult()">
+        Clear
+      </button>
+
+    </div>
+
+  </div>
+
+
+</div>
+
+
+<!--
+  Hidden iframe receives the Apps Script response.
+-->
+
+<iframe
+  id="connectionFrame"
+  name="connectionFrame">
+</iframe>
+
+
+<!--
+  Hidden form sends the messy idea to Apps Script.
+-->
+
+<form
+  id="appsScriptForm"
+  method="POST"
+  target="connectionFrame"
+  action="https://script.google.com/macros/s/AKfycbxf4n39tX-1olKwTeZIvg34J_jTHbDbBu8gfRu3pgsdWaL3sih3mNZwJPxrugHCGvpRvw/exec">
+
+  <input
+    type="hidden"
+    name="mess"
+    id="appsScriptMess">
+
+  <input
+    type="hidden"
+    name="requestId"
+    id="appsScriptRequestId">
+
+</form>
+
+
+<script>
+
+
+/* =========================================================
+   SPEECH RECOGNITION
+   ========================================================= */
+
+const SpeechRecognition =
+  window.SpeechRecognition ||
+  window.webkitSpeechRecognition;
+
+let recognition = null;
+
+let recording = false;
+
+let finalTranscript = "";
+
+
+/* =========================================================
+   CHECK MICROPHONE / BROWSER SUPPORT
+   ========================================================= */
+
+function checkMicrophoneSupport() {
+
+  const micButton =
+    document.getElementById("micButton");
+
+  const supportStatus =
+    document.getElementById("supportStatus");
+
+  const status =
+    document.getElementById("status");
+
+  const warning =
+    document.getElementById("micWarning");
+
+
+  if (SpeechRecognition) {
+
+    supportStatus.textContent =
+      "Microphone ready";
+
+    status.textContent =
+      "Tap the microphone and start talking.";
+
+    warning.style.display =
+      "none";
+
+    micButton.disabled =
+      false;
+
+    return true;
+
+  }
+
+
+  /* Browser does not support speech recognition */
+
+  supportStatus.textContent =
+    "Typing mode";
+
+  status.textContent =
+    "You can type your game idea below.";
+
+  warning.style.display =
+    "block";
+
+  micButton.disabled =
+    true;
+
+  micButton.style.opacity =
+    "0.45";
+
+  micButton.style.cursor =
+    "not-allowed";
+
+  return false;
+
+}
+
+
+/* =========================================================
+   CREATE SPEECH RECOGNITION
+   ========================================================= */
+
+if (SpeechRecognition) {
+
+  recognition =
+    new SpeechRecognition();
+
+
+  recognition.continuous =
+    true;
+
+  recognition.interimResults =
+    true;
+
+  recognition.lang =
+    "en-CA";
+
+
+  recognition.onstart =
+    function() {
+
+      recording =
+        true;
+
+
+      document
+        .getElementById("micButton")
+        .classList.add("recording");
+
+
+      document.getElementById("status")
+        .textContent =
+        "Listening… tell me your messy idea!";
+
+    };
+
+
+  recognition.onresult =
+    function(event) {
+
+      let interimTranscript =
+        "";
+
+
+      for (
+        let i = event.resultIndex;
+        i < event.results.length;
+        i++
+      ) {
+
+        const transcript =
+          event.results[i][0].transcript;
+
+
+        if (
+          event.results[i].isFinal
+        ) {
+
+          finalTranscript +=
+            transcript + " ";
+
+        } else {
+
+          interimTranscript +=
+            transcript;
+
+        }
+
+      }
+
+
+      document.getElementById("mess").value =
+        finalTranscript + interimTranscript;
+
+    };
+
+
+  recognition.onerror =
+    function(event) {
+
+      console.log(
+        "Speech recognition error:",
+        event.error
+      );
+
+
+      if (
+        event.error === "not-allowed"
+      ) {
+
+        document.getElementById("status")
+          .textContent =
+          "Microphone permission was blocked. You can still type below.";
+
+      } else if (
+        event.error === "no-speech"
+      ) {
+
+        document.getElementById("status")
+          .textContent =
+          "I didn't hear anything. Try again!";
+
+      } else {
+
+        document.getElementById("status")
+          .textContent =
+          "Microphone issue: " +
+          event.error +
+          ". You can still type below.";
+
+      }
+
+    };
+
+
+  recognition.onend =
+    function() {
+
+      if (recording) {
+
+        try {
+
+          recognition.start();
+
+        } catch (e) {
+
+          console.log(e);
+
+        }
+
+      }
+
+    };
+
+}
+
+
+/* =========================================================
+   MICROPHONE BUTTON
+   ========================================================= */
+
+function toggleRecording() {
+
+  if (!recognition) {
+
+    document.getElementById("status")
+      .textContent =
+      "Voice input isn't supported here. You can type your idea below.";
+
+    return;
+
+  }
+
+
+  if (!recording) {
+
+    finalTranscript =
+      document.getElementById("mess").value;
+
+
+    try {
+
+      recognition.start();
+
+    } catch (e) {
+
+      console.log(e);
+
+    }
+
+  } else {
+
+    recording =
+      false;
+
+
+    try {
+
+      recognition.stop();
+
+    } catch (e) {
+
+      console.log(e);
+
+    }
+
+
+    document
+      .getElementById("micButton")
+      .classList.remove("recording");
+
+
+    document.getElementById("status")
+      .textContent =
+      "Idea captured! You can edit it below.";
+
+  }
+
+}
+
+
+/* =========================================================
+   GENERATE GAME
+   ========================================================= */
+
+function generateGame() {
+
+  const mess =
+    document.getElementById("mess")
+      .value
+      .trim();
+
+
+  if (!mess) {
+
+    document.getElementById("status")
+      .textContent =
+      "Tell me your swim game idea first!";
+
+    return;
+
+  }
+
+
+  const generateButton =
+    document.getElementById("generateButton");
+
+
+  generateButton.classList.add("loading");
+
+
+  generateButton.textContent =
+    "🫧 Making a swim game…";
+
+
+  document.getElementById("status")
+    .textContent =
+    "Creating your swim game…";
+
+
+  document.getElementById("resultCard")
+    .style.display =
+    "block";
+
+
+  document.getElementById("result")
+    .textContent =
+    "🐠 Swimming through your idea…";
+
+
+  const requestId =
+    Date.now().toString() +
+    Math.random()
+      .toString(36)
+      .substring(2);
+
+
+  document.getElementById("appsScriptMess")
+    .value =
+    mess;
+
+
+  document.getElementById("appsScriptRequestId")
+    .value =
+    requestId;
+
+
+  document.getElementById("appsScriptForm")
+    .submit();
+
+}
+
+
+/* =========================================================
+   RECEIVE RESPONSE FROM APPS SCRIPT
+   ========================================================= */
+
+window.addEventListener(
+  "message",
+  function(event) {
+
+    console.log(
+      "Message received:",
+      event.data
+    );
+
+
+    const data =
+      event.data;
+
+
+    if (!data) {
+      return;
+    }
+
+
+    if (
+      data.type !==
+      "swimGameResult"
+    ) {
+
+      return;
+
+    }
+
+
+    const currentRequestId =
+      document
+        .getElementById(
+          "appsScriptRequestId"
+        )
+        .value;
+
+
+    if (
+      data.requestId !==
+      currentRequestId
+    ) {
+
+      console.log(
+        "Request ID mismatch."
+      );
+
+      return;
+
+    }
+
+
+    const generateButton =
+      document.getElementById(
+        "generateButton"
+      );
+
+
+    generateButton
+      .classList
+      .remove("loading");
+
+
+    generateButton.textContent =
+      "🫧 Turn My Mess Into A Swim Game";
+
+
+    if (data.error) {
+
+      document.getElementById(
+        "result"
+      ).textContent =
+        "Something went wrong:\n\n" +
+        data.error;
+
+
+      document.getElementById(
+        "status"
+      ).textContent =
+        "Let's try that again.";
+
+      return;
+
+    }
+
+
+    document.getElementById(
+      "result"
+    ).textContent =
+      data.result ||
+      "No result was returned.";
+
+
+    document.getElementById(
+      "status"
+    ).textContent =
+      "Game created! Dive in!";
+
+  }
+);
+
+
+/* =========================================================
+   COPY
+   ========================================================= */
+
+function copyResult() {
+
+  const text =
+    document.getElementById(
+      "result"
+    ).textContent;
+
+
+  navigator.clipboard
+    .writeText(text);
+
+
+  document.getElementById(
+    "status"
+  ).textContent =
+    "Copied! Ready to share.";
+
+}
+
+
+/* =========================================================
+   DOWNLOAD
+   ========================================================= */
+
+function downloadResult() {
+
+  const text =
+    document.getElementById(
+      "result"
+    ).textContent;
+
+
+  const blob =
+    new Blob(
+      [text],
+      {
+        type: "text/plain"
+      }
+    );
+
+
+  const url =
+    URL.createObjectURL(blob);
+
+
+  const a =
+    document.createElement("a");
+
+
+  a.href =
+    url;
+
+
+  a.download =
+    "swim-game.txt";
+
+
+  a.click();
+
+
+  URL.revokeObjectURL(url);
+
+
+  document.getElementById(
+    "status"
+  ).textContent =
+    "Swim game downloaded!";
+
+}
+
+
+/* =========================================================
+   SHARE
+   ========================================================= */
+
+async function shareResult() {
+
+  const text =
+    document.getElementById(
+      "result"
+    ).textContent;
+
+
+  if (navigator.share) {
+
+    try {
+
+      await navigator.share({
+
+        title:
+          "My Swim Game",
+
+        text:
+          text
+
+      });
+
+    } catch (e) {
+
+      console.log(e);
+
+    }
+
+  } else {
+
+    await navigator.clipboard
+      .writeText(text);
+
+
+    alert(
+      "Copied to clipboard."
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   PRINT
+   ========================================================= */
+
+function printResult() {
+
+  const text =
+    document.getElementById(
+      "result"
+    ).textContent;
+
+
+  const printWindow =
+    window.open(
+      "",
+      "_blank"
+    );
+
+
+  printWindow.document.write(`
+    <html>
+
+    <head>
+
+      <title>
+        Swim Game
+      </title>
+
+      <style>
+
+        body {
+          font-family: Arial, sans-serif;
+          padding: 40px;
+          white-space: pre-wrap;
+          line-height: 1.5;
+          color: #07385d;
+        }
+
+      </style>
+
+    </head>
+
+    <body>
+      ${escapeHtml(text)}
+    </body>
+
+    </html>
+  `);
+
+
+  printWindow.document.close();
+
+  printWindow.print();
+
+}
+
+
+/* =========================================================
+   SAVE
+   ========================================================= */
+
+function saveResult() {
+
+  const text =
+    document.getElementById(
+      "result"
+    ).textContent;
+
+
+  localStorage.setItem(
+    "savedSwimGame",
+    text
+  );
+
+
+  alert(
+    "Swim game saved on this device."
+  );
+
+}
+
+
+/* =========================================================
+   CLEAR
+   ========================================================= */
+
+function clearResult() {
+
+  document.getElementById(
+    "mess"
+  ).value = "";
+
+
+  document.getElementById(
+    "result"
+  ).textContent = "";
+
+
+  document.getElementById(
+    "resultCard"
+  ).style.display =
+    "none";
+
+
+  finalTranscript =
+    "";
+
+
+  document.getElementById(
+    "status"
+  ).textContent =
+    "Ready for your next messy idea!";
+
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+
+}
+
+
+/* =========================================================
+   HTML ESCAPING FOR PRINT
+   ========================================================= */
+
+function escapeHtml(text) {
+
+  return text
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
+
+
+/* =========================================================
+   INITIALIZE
+   ========================================================= */
+
+checkMicrophoneSupport();
+
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Turn My Mess Into a Swim Game</title>
+
+<style>
+
 body {
   font-family: Arial, sans-serif;
   background: #111;
