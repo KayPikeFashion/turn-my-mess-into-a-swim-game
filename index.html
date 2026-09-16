@@ -935,12 +935,113 @@ textarea::placeholder {
 }
 
 
-#result {
-  white-space: pre-wrap;
+/* =========================================================
+   FORMATTED RESULT
+   ========================================================= */
 
+#result {
   line-height: 1.5;
 
   font-size: 16px;
+
+  color: #07385d;
+}
+
+
+/*
+  Top information block.
+
+  These four lines stay together tightly with no paragraph
+  spacing between them.
+*/
+
+.resultInfoBlock {
+  margin-bottom: 16px;
+}
+
+.resultInfoLine {
+  margin: 0;
+  padding: 0;
+
+  line-height: 1.4;
+}
+
+
+/*
+  Bold labels.
+*/
+
+.resultInfoLine strong {
+  font-weight: 700;
+}
+
+
+/*
+  Main game title.
+*/
+
+.resultGameTitle {
+  font-size: 22px;
+
+  font-weight: 700;
+
+  margin: 16px 0 10px;
+
+  color: #07385d;
+}
+
+
+/*
+  Section headings.
+*/
+
+.resultSectionTitle {
+  font-weight: 700;
+
+  margin-top: 15px;
+
+  margin-bottom: 4px;
+
+  color: #0879b8;
+}
+
+
+/*
+  Normal result text.
+*/
+
+.resultText {
+  margin: 0 0 6px;
+
+  white-space: pre-wrap;
+}
+
+
+/*
+  Bullet lists.
+*/
+
+.resultList {
+  margin: 4px 0 8px 20px;
+
+  padding-left: 15px;
+}
+
+.resultList li {
+  margin-bottom: 3px;
+}
+
+
+/*
+  Script lines.
+
+  Keeps dialogue readable without creating huge spaces.
+*/
+
+.resultScript {
+  margin: 0 0 4px;
+
+  white-space: pre-wrap;
 }
 
 
@@ -1058,6 +1159,10 @@ textarea::placeholder {
 
   #resultCard {
     padding: 17px;
+  }
+
+  .resultGameTitle {
+    font-size: 20px;
   }
 
 }
@@ -1352,7 +1457,7 @@ For example:
   id="appsScriptForm"
   method="POST"
   target="connectionFrame"
-  action="https://script.google.com/macros/s/AKfycbxf4n39tX-1olKwTeZIvg34J_jTHbDbBu8gfRu3pgsdWaL3sih3mNZwJPxrugHCGvpRvw/exec">
+  action="https://script.google.com/macros/s/AKfycbxf4n39tX-1olKwTeZIvg34JjTHbDbBu8gfRu3pgsdWaL3sih3mNZwJPxrugHCGvpRvw/exec">
 
   <input
     type="hidden"
@@ -1379,39 +1484,13 @@ const SpeechRecognition =
 
 let recognition = null;
 
-
-/*
-  IMPORTANT:
-
-  recording means the user is CURRENTLY asking the microphone
-  to listen.
-
-  Unlike the previous version, we DO NOT automatically restart
-  recognition when a mobile browser ends a session.
-
-  Mobile browsers commonly end speech recognition after a
-  natural pause. That is okay.
-
-  The user can simply tap the microphone again to continue.
-*/
-
 let recording = false;
 
 let recognitionActive = false;
 
 let recognitionStarting = false;
 
-
-/*
-  Permanent transcript already captured.
-*/
-
 let finalTranscript = "";
-
-
-/*
-  Temporary transcript from the current recognition session.
-*/
 
 let sessionFinalTranscript = "";
 
@@ -1717,13 +1796,6 @@ function startRecognition() {
     true;
 
 
-  /*
-    Each microphone tap starts a completely fresh speech
-    recognition session.
-
-    finalTranscript stays intact.
-  */
-
   sessionFinalTranscript =
     "";
 
@@ -1759,26 +1831,11 @@ if (SpeechRecognition) {
   recognition =
     new SpeechRecognition();
 
-
-  /*
-    MOBILE FIX:
-
-    Continuous recognition is OFF.
-
-    The browser is allowed to naturally end a session when
-    the speaker pauses.
-
-    IMPORTANT:
-    onend will NOT restart it automatically.
-  */
-
   recognition.continuous =
     false;
 
-
   recognition.interimResults =
     true;
-
 
   recognition.lang =
     "en-CA";
@@ -1835,7 +1892,6 @@ if (SpeechRecognition) {
         const result =
           event.results[i];
 
-
         const transcript =
           result[0].transcript;
 
@@ -1855,10 +1911,6 @@ if (SpeechRecognition) {
       }
 
 
-      /*
-        Save final words from this session.
-      */
-
       if (newFinal.trim()) {
 
         sessionFinalTranscript +=
@@ -1871,16 +1923,6 @@ if (SpeechRecognition) {
       sessionInterimTranscript =
         newInterim;
 
-
-      /*
-        Display:
-
-        old permanent text
-        +
-        current session final text
-        +
-        current interim text
-      */
 
       document
         .getElementById("mess")
@@ -1909,10 +1951,6 @@ if (SpeechRecognition) {
         false;
 
 
-      /*
-        Permission errors really do stop recording.
-      */
-
       if (
         event.error === "not-allowed" ||
         event.error === "service-not-allowed"
@@ -1920,7 +1958,6 @@ if (SpeechRecognition) {
 
         recording =
           false;
-
 
         recognitionActive =
           false;
@@ -1942,20 +1979,12 @@ if (SpeechRecognition) {
       }
 
 
-      /*
-        A no-speech result simply means the browser didn't
-        hear anything during this session.
-
-        We do NOT restart automatically.
-      */
-
       if (
         event.error === "no-speech"
       ) {
 
         recording =
           false;
-
 
         recognitionActive =
           false;
@@ -1976,10 +2005,6 @@ if (SpeechRecognition) {
 
       }
 
-
-      /*
-        Aborted can happen when the browser closes a session.
-      */
 
       if (
         event.error === "aborted"
@@ -2019,10 +2044,6 @@ if (SpeechRecognition) {
         false;
 
 
-      /*
-        Commit this session's final words exactly once.
-      */
-
       if (
         sessionFinalTranscript
       ) {
@@ -2040,33 +2061,11 @@ if (SpeechRecognition) {
         "";
 
 
-      /*
-        Show only the permanent transcript.
-      */
-
       document
         .getElementById("mess")
         .value =
         finalTranscript;
 
-
-      /*
-        IMPORTANT MOBILE FIX:
-
-        DO NOT restart recognition here.
-
-        The old version did:
-
-          if (recording) {
-              startRecognition();
-          }
-
-        That caused the microphone to make a restart noise
-        every time the phone naturally ended a speech session.
-
-        Now the session simply ends and the user can tap
-        the microphone again when they want to continue.
-      */
 
       recording =
         false;
@@ -2106,30 +2105,11 @@ function toggleRecording() {
   }
 
 
-  /*
-    ========================================================
-    START RECORDING
-    ========================================================
-  */
-
   if (!recording) {
 
     recording =
       true;
 
-
-    /*
-      Preserve anything already in the text box.
-
-      This means you can:
-
-      1. Talk
-      2. Let mobile naturally stop listening
-      3. Tap the microphone
-      4. Talk some more
-
-      Everything gets added together.
-    */
 
     const existingText =
       document
@@ -2158,19 +2138,9 @@ function toggleRecording() {
   }
 
 
-  /*
-    ========================================================
-    MANUAL STOP
-    ========================================================
-  */
-
   recording =
     false;
 
-
-  /*
-    Commit any final words already received.
-  */
 
   if (
     sessionFinalTranscript
@@ -2426,14 +2396,9 @@ function sendGameRequest(mess) {
 
 
   /*
-    ========================================================
-    CREATIVE INPUT INSTRUCTION
-    ========================================================
-
-    This tells the AI to contribute useful creative ideas
-    instead of automatically filling these sections with
-    "None."
-    ========================================================
+    Creative input is requested, but the AI is explicitly told
+    to keep variations simple and to include easier/harder
+    scaling without compromising pool safety.
   */
 
   const enhancedMess =
@@ -2441,16 +2406,17 @@ function sendGameRequest(mess) {
     "\n\n" +
     "EDITOR NOTE — CREATIVE INPUT REQUIRED: " +
     "Preserve the teacher's actual game idea and do not replace " +
-    "the core activity. However, the finished game should include " +
-    "useful creative teaching input. Do NOT write 'None.' for " +
-    "Variations/Options or Sample Scenes/Bonus Rules/Ideas merely " +
-    "because the teacher did not provide any. Create 2–3 genuinely " +
-    "useful variations or scaling options that naturally fit this " +
-    "specific game, and 1–2 fun sample lines, bonus rules, or ideas " +
-    "that a swim instructor could realistically use. These additions " +
-    "should be simple, age-appropriate, pool-appropriate, and clearly " +
-    "connected to the actual game. Do not add unrelated equipment, " +
-    "skills, hazards, or complicated mechanics.";
+    "the core activity. Include 2–3 useful variations or scaling " +
+    "options that naturally fit THIS game. When appropriate, include " +
+    "at least one slightly easier option and one slightly harder option. " +
+    "Scale by assistance, distance, depth, equipment, speed, complexity, " +
+    "or independence only when appropriate. Keep all scaling pool-appropriate: " +
+    "do not introduce unsafe diving, unsafe distances, breath-holding contests, " +
+    "loss of needed supervision, collisions, or other obviously unsafe changes. " +
+    "Also include 1–2 fun sample lines, bonus rules, or ideas that fit the " +
+    "same theme. Do not add unrelated equipment, skills, hazards, or complicated mechanics. " +
+    "Do NOT write 'None.' for Variations/Options or Sample Scenes/Bonus Rules/Ideas " +
+    "unless there is genuinely no useful addition.";
 
 
   document
@@ -2479,15 +2445,7 @@ function sendGameRequest(mess) {
 function generateGame() {
 
   /*
-    ========================================================
-    FIRST: STOP THE MICROPHONE
-    ========================================================
-
-    This happens BEFORE anything else.
-
-    That means pressing the yellow button can never leave
-    speech recognition running in the background.
-    ========================================================
+    STOP MICROPHONE
   */
 
   if (recording || recognitionActive) {
@@ -2495,14 +2453,9 @@ function generateGame() {
     recording =
       false;
 
-
     recognitionStarting =
       false;
 
-
-    /*
-      Commit any final speech that has already arrived.
-    */
 
     if (
       sessionFinalTranscript
@@ -2520,10 +2473,6 @@ function generateGame() {
     sessionInterimTranscript =
       "";
 
-
-    /*
-      Stop the browser microphone.
-    */
 
     if (recognition) {
 
@@ -2562,9 +2511,7 @@ function generateGame() {
 
 
   /*
-    ========================================================
-    NOW READ THE IDEA
-    ========================================================
+    READ IDEA
   */
 
   const mess =
@@ -2618,7 +2565,7 @@ function generateGame() {
 
   document
     .getElementById("result")
-    .textContent =
+    .innerHTML =
     "";
 
 
@@ -2673,7 +2620,7 @@ function retryGame() {
 
   document
     .getElementById("result")
-    .textContent =
+    .innerHTML =
     "";
 
 
@@ -2683,6 +2630,399 @@ function retryGame() {
   sendGameRequest(
     lastMess
   );
+
+}
+
+
+/* =========================================================
+   FORMAT AI RESULT
+   ========================================================= */
+
+function formatResult(text) {
+
+  if (!text) {
+    return "";
+  }
+
+
+  /*
+    Normalize line endings.
+  */
+
+  text =
+    text
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .trim();
+
+
+  const lines =
+    text.split("\n");
+
+
+  let html =
+    "";
+
+  let inList =
+    false;
+
+
+  function closeList() {
+
+    if (inList) {
+
+      html +=
+        "</ul>";
+
+      inList =
+        false;
+
+    }
+
+  }
+
+
+  function escapeHtml(value) {
+
+    return value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+  }
+
+
+  function addParagraph(value) {
+
+    closeList();
+
+    if (!value.trim()) {
+      return;
+    }
+
+    html +=
+      '<div class="resultText">' +
+      escapeHtml(value.trim()) +
+      "</div>";
+
+  }
+
+
+  for (
+    let i = 0;
+    i < lines.length;
+    i++
+  ) {
+
+    let line =
+      lines[i].trim();
+
+
+    /*
+      Ignore completely empty lines.
+      This is intentional: it keeps the finished result tight.
+    */
+
+    if (!line) {
+      continue;
+    }
+
+
+    /*
+      Strip markdown bold markers.
+    */
+
+    line =
+      line.replace(
+        /\*\*(.*?)\*\*/g,
+        "$1"
+      );
+
+
+    const upper =
+      line.toUpperCase();
+
+
+    /*
+      ========================================================
+      TOP INFORMATION BLOCK
+      ========================================================
+    */
+
+    if (
+      upper.startsWith("SKILL:")
+    ) {
+
+      closeList();
+
+      html +=
+        '<div class="resultInfoLine"><strong>SKILL:</strong> ' +
+        escapeHtml(
+          line.substring(6).trim()
+        ) +
+        "</div>";
+
+      continue;
+
+    }
+
+
+    if (
+      upper.startsWith("WAY TO TEACH:")
+    ) {
+
+      closeList();
+
+      html +=
+        '<div class="resultInfoLine"><strong>WAY TO TEACH:</strong> ' +
+        escapeHtml(
+          line.substring(
+            line.indexOf(":") + 1
+          ).trim()
+        ) +
+        "</div>";
+
+      continue;
+
+    }
+
+
+    if (
+      upper.startsWith("LEVEL:")
+    ) {
+
+      closeList();
+
+      html +=
+        '<div class="resultInfoLine"><strong>LEVEL:</strong> ' +
+        escapeHtml(
+          line.substring(6).trim()
+        ) +
+        "</div>";
+
+      continue;
+
+    }
+
+
+    if (
+      upper.startsWith("TOOLS/EQUIPMENT:")
+    ) {
+
+      closeList();
+
+      html +=
+        '<div class="resultInfoLine"><strong>Tools/Equipment:</strong> ' +
+        escapeHtml(
+          line.substring(
+            line.indexOf(":") + 1
+          ).trim()
+        ) +
+        "</div>";
+
+      continue;
+
+    }
+
+
+    /*
+      ========================================================
+      GAME TITLE
+      ========================================================
+    */
+
+    /*
+      If we have not reached a known section yet, and this is
+      a short standalone line, treat it as the game title.
+    */
+
+    if (
+      !html.includes("resultGameTitle") &&
+      !upper.startsWith("SETUP:") &&
+      !upper.startsWith("EXPLANATION:") &&
+      !upper.startsWith("GOAL:") &&
+      !upper.startsWith("WIN CONDITION:") &&
+      !upper.startsWith("VARIATIONS") &&
+      !upper.startsWith("SAMPLE SCENES") &&
+      !upper.startsWith("HOW TO PLAY") &&
+      !upper.startsWith("ACTIVITY")
+    ) {
+
+      /*
+        Detect a likely title after the top four fields.
+      */
+
+      if (
+        (
+          upper === line &&
+          line.length < 70
+        ) ||
+        (
+          line.length < 55 &&
+          i > 0
+        )
+      ) {
+
+        const previousText =
+          lines
+            .slice(0, i)
+            .join("\n")
+            .toUpperCase();
+
+
+        if (
+          previousText.includes("SKILL:") &&
+          previousText.includes("LEVEL:")
+        ) {
+
+          closeList();
+
+          html +=
+            '<div class="resultGameTitle">' +
+            escapeHtml(line) +
+            "</div>";
+
+          continue;
+
+        }
+
+      }
+
+    }
+
+
+    /*
+      ========================================================
+      SECTION HEADINGS
+      ========================================================
+    */
+
+    const headingPatterns = [
+      "HOW TO PLAY:",
+      "ACTIVITY:",
+      "SETUP:",
+      "EXPLANATION:",
+      "GOAL:",
+      "WIN CONDITION:",
+      "VARIATIONS/OPTIONS:",
+      "VARIATIONS / OPTIONS:",
+      "VARIATIONS:",
+      "SAMPLE SCENES/BONUS RULES/IDEAS:",
+      "SAMPLE SCENES / BONUS RULES / IDEAS:",
+      "SAMPLE SCENES:",
+      "BONUS RULES:",
+      "BONUS IDEAS:"
+    ];
+
+
+    let headingFound =
+      false;
+
+
+    for (
+      let h = 0;
+      h < headingPatterns.length;
+      h++
+    ) {
+
+      if (
+        upper ===
+        headingPatterns[h]
+      ) {
+
+        closeList();
+
+        html +=
+          '<div class="resultSectionTitle">' +
+          escapeHtml(line) +
+          "</div>";
+
+        headingFound =
+          true;
+
+        break;
+
+      }
+
+    }
+
+
+    if (headingFound) {
+      continue;
+    }
+
+
+    /*
+      ========================================================
+      LIST ITEMS
+      ========================================================
+    */
+
+    if (
+      /^[-•*]\s+/.test(line)
+    ) {
+
+      if (!inList) {
+
+html +=
+  '<ul class="resultList">';
+
+        inList =
+          true;
+
+      }
+
+
+      const item =
+        line.replace(
+          /^[-•*]\s+/,
+          ""
+        );
+
+
+      html +=
+        "<li>" +
+        escapeHtml(item) +
+        "</li>";
+
+      continue;
+
+    }
+
+
+    /*
+      ========================================================
+      SCRIPT / NORMAL TEXT
+      ========================================================
+    */
+
+    closeList();
+
+    html +=
+      '<div class="resultScript">' +
+      escapeHtml(line) +
+      "</div>";
+
+  }
+
+
+  closeList();
+
+
+  /*
+    Wrap the information block visually as one unit.
+    The four lines themselves remain tight.
+  */
+
+  html =
+    '<div class="resultInfoBlock">' +
+    html +
+    "</div>";
+
+
+  return html;
 
 }
 
@@ -2727,10 +3067,6 @@ window.addEventListener(
         )
         .value;
 
-
-    /*
-      Ignore responses belonging to an older request.
-    */
 
     if (
       data.requestId !==
@@ -2816,7 +3152,7 @@ window.addEventListener(
 
 
     /*
-      Successful response!
+      Successful response.
     */
 
     showGameSurfaced();
@@ -2824,9 +3160,11 @@ window.addEventListener(
 
     document
       .getElementById("result")
-      .textContent =
-      data.result ||
-      "No result was returned.";
+      .innerHTML =
+      formatResult(
+        data.result ||
+        "No result was returned."
+      );
 
 
     document
@@ -2839,15 +3177,37 @@ window.addEventListener(
 
 
 /* =========================================================
+   CREATE CLEAN COPY TEXT
+   ========================================================= */
+
+function getCleanResultText() {
+
+  const result =
+    document
+      .getElementById("result");
+
+
+  /*
+    If the browser has the original formatted text available,
+    rebuild a clean copy from the visible result.
+
+    innerText preserves the useful line breaks while removing
+    the HTML formatting.
+  */
+
+  return result.innerText.trim();
+
+}
+
+
+/* =========================================================
    COPY
    ========================================================= */
 
 function copyResult() {
 
   const text =
-    document
-      .getElementById("result")
-      .textContent;
+    getCleanResultText();
 
 
   navigator.clipboard
@@ -2869,9 +3229,7 @@ function copyResult() {
 function downloadResult() {
 
   const text =
-    document
-      .getElementById("result")
-      .textContent;
+    getCleanResultText();
 
 
   const blob =
@@ -2920,9 +3278,7 @@ function downloadResult() {
 async function shareResult() {
 
   const text =
-    document
-      .getElementById("result")
-      .textContent;
+    getCleanResultText();
 
 
   if (navigator.share) {
@@ -2966,10 +3322,9 @@ async function shareResult() {
 
 function printResult() {
 
-  const text =
+  const result =
     document
-      .getElementById("result")
-      .textContent;
+      .getElementById("result");
 
 
   const printWindow =
@@ -2993,9 +3348,36 @@ function printResult() {
         body {
           font-family: Arial, sans-serif;
           padding: 40px;
-          white-space: pre-wrap;
-          line-height: 1.5;
+          line-height: 1.45;
           color: #07385d;
+        }
+
+        .resultInfoLine {
+          margin: 0;
+          padding: 0;
+          line-height: 1.35;
+        }
+
+        .resultGameTitle {
+          font-size: 24px;
+          font-weight: bold;
+          margin: 18px 0 10px;
+        }
+
+        .resultSectionTitle {
+          font-weight: bold;
+          margin-top: 16px;
+          margin-bottom: 4px;
+        }
+
+        .resultText,
+        .resultScript {
+          margin: 0 0 5px;
+          white-space: pre-wrap;
+        }
+
+        .resultList {
+          margin-top: 4px;
         }
 
       </style>
@@ -3003,7 +3385,9 @@ function printResult() {
     </head>
 
     <body>
-      ${escapeHtml(text)}
+
+      ${result.innerHTML}
+
     </body>
 
     </html>
@@ -3024,9 +3408,7 @@ function printResult() {
 function saveResult() {
 
   const text =
-    document
-      .getElementById("result")
-      .textContent;
+    getCleanResultText();
 
 
   localStorage.setItem(
@@ -3047,10 +3429,6 @@ function saveResult() {
    ========================================================= */
 
 function clearResult() {
-
-  /*
-    Stop everything.
-  */
 
   recording =
     false;
@@ -3095,7 +3473,7 @@ function clearResult() {
 
   document
     .getElementById("result")
-    .textContent =
+    .innerHTML =
     "";
 
 
@@ -3146,37 +3524,6 @@ function clearResult() {
     top: 0,
     behavior: "smooth"
   });
-
-}
-
-
-/* =========================================================
-   HTML ESCAPING FOR PRINT
-   ========================================================= */
-
-function escapeHtml(text) {
-
-  return text
-    .replace(
-      /&/g,
-      "&amp;"
-    )
-    .replace(
-      /</g,
-      "&lt;"
-    )
-    .replace(
-      />/g,
-      "&gt;"
-    )
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-    .replace(
-      /'/g,
-      "&#039;"
-    );
 
 }
 
