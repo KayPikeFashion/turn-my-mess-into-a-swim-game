@@ -1385,7 +1385,6 @@ For example:
 
 <script>
 
-
 /* =========================================================
    SPEECH RECOGNITION
    ========================================================= */
@@ -1400,6 +1399,24 @@ let recording = false;
 
 let finalTranscript = "";
 
+/*
+  Mobile browsers can sometimes send the same speech result
+  more than once, especially when continuous recognition
+  restarts.
+
+  We keep track of how many final results we have already
+  processed so we never add the same result twice.
+*/
+
+let processedFinalResults = 0;
+
+/*
+  Prevents a recognition session from being restarted while
+  another start/stop operation is still happening.
+*/
+
+let recognitionStarting = false;
+let recognitionStopping = false;
 
 /* =========================================================
    AI LOADING / RETRY VARIABLES
