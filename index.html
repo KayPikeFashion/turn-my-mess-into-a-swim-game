@@ -1060,10 +1060,6 @@ textarea::placeholder {
     padding: 17px;
   }
 
-  .swimmingFish {
-    font-size: 34px;
-  }
-
 }
 
 
@@ -1218,9 +1214,7 @@ For example:
     </button>
 
 
-    <!-- =====================================================
-         FISH SCHOOL LOADING ANIMATION
-         ===================================================== -->
+    <!-- FISH SCHOOL LOADING ANIMATION -->
 
     <div id="loadingOcean">
 
@@ -1344,9 +1338,7 @@ For example:
 </div>
 
 
-<!--
-  Hidden iframe receives the Apps Script response.
--->
+<!-- Hidden iframe -->
 
 <iframe
   id="connectionFrame"
@@ -1354,9 +1346,7 @@ For example:
 </iframe>
 
 
-<!--
-  Hidden form sends the messy idea to Apps Script.
--->
+<!-- Hidden form -->
 
 <form
   id="appsScriptForm"
@@ -1387,50 +1377,38 @@ const SpeechRecognition =
   window.SpeechRecognition ||
   window.webkitSpeechRecognition;
 
-
 let recognition = null;
 
-
 /*
-  "recording" means the user WANTS the microphone running.
+  recording = what the USER wants.
 
-  "recognitionActive" means the browser currently has an
-  active speech-recognition session.
+  recognitionActive = whether the browser currently has
+  an active speech recognition session.
 */
 
 let recording = false;
-
 let recognitionActive = false;
 
 let recognitionStarting = false;
-
-
-/*
-  Mobile browsers sometimes need a short pause between
-  recognition sessions.
-*/
 
 let restartTimer = null;
 
 
 /*
-  This is the permanent transcript.
-
-  It contains only speech that has already been finalized.
+  Permanent transcript already captured.
 */
 
 let finalTranscript = "";
 
 
 /*
-  These belong ONLY to the current recognition session.
+  Temporary transcript from the current recognition session.
 
-  They are cleared every time a new recognition session
-  begins.
+  We don't immediately mix this into finalTranscript.
+  This is important for mobile browsers.
 */
 
 let sessionFinalTranscript = "";
-
 let sessionInterimTranscript = "";
 
 
@@ -1463,7 +1441,6 @@ function getDeviceType() {
     navigator.vendor ||
     window.opera;
 
-
   const isIOS =
     /iPad|iPhone|iPod/.test(ua) ||
     (
@@ -1471,20 +1448,16 @@ function getDeviceType() {
       navigator.maxTouchPoints > 1
     );
 
-
   const isAndroid =
     /Android/i.test(ua);
-
 
   if (isIOS) {
     return "ios";
   }
 
-
   if (isAndroid) {
     return "android";
   }
-
 
   return "desktop";
 
@@ -1497,31 +1470,25 @@ function getBrowserType() {
     navigator.userAgent ||
     "";
 
-
   if (/Edg/i.test(ua)) {
     return "edge";
   }
-
 
   if (/Firefox/i.test(ua)) {
     return "firefox";
   }
 
-
   if (/CriOS/i.test(ua)) {
     return "chrome-ios";
   }
-
 
   if (/Chrome/i.test(ua)) {
     return "chrome";
   }
 
-
   if (/Safari/i.test(ua)) {
     return "safari";
   }
-
 
   return "other";
 
@@ -1536,7 +1503,6 @@ function tryOpenSupportedBrowser() {
 
   const device =
     getDeviceType();
-
 
   const currentUrl =
     window.location.href;
@@ -1556,7 +1522,6 @@ function tryOpenSupportedBrowser() {
       cleanUrl +
       "#Intent;scheme=https;package=com.android.chrome;end";
 
-
     return;
 
   }
@@ -1568,7 +1533,6 @@ function tryOpenSupportedBrowser() {
       "Please open this page in Safari for voice input.\n\n" +
       "Copy this page address and paste it into Safari."
     );
-
 
     return;
 
@@ -1592,26 +1556,20 @@ function checkMicrophoneSupport() {
   const micButton =
     document.getElementById("micButton");
 
-
   const supportStatus =
     document.getElementById("supportStatus");
-
 
   const status =
     document.getElementById("status");
 
-
   const warning =
     document.getElementById("micWarning");
-
 
   const warningTitle =
     document.getElementById("warningTitle");
 
-
   const browserTip =
     document.getElementById("browserTip");
-
 
   const browserButton =
     document.getElementById("browserButton");
@@ -1626,30 +1584,23 @@ function checkMicrophoneSupport() {
     supportStatus.textContent =
       "Microphone ready";
 
-
     status.textContent =
       "Tap the microphone and start talking.";
-
 
     warning.style.display =
       "none";
 
-
     browserButton.style.display =
       "none";
-
 
     micButton.disabled =
       false;
 
-
     micButton.style.opacity =
       "1";
 
-
     micButton.style.cursor =
       "pointer";
-
 
     return true;
 
@@ -1659,18 +1610,14 @@ function checkMicrophoneSupport() {
   supportStatus.textContent =
     "Typing mode";
 
-
   warning.style.display =
     "block";
-
 
   micButton.disabled =
     true;
 
-
   micButton.style.opacity =
     "0.45";
-
 
   micButton.style.cursor =
     "not-allowed";
@@ -1681,24 +1628,19 @@ function checkMicrophoneSupport() {
     warningTitle.textContent =
       "🌊 Voice input isn't available in this browser.";
 
-
     browserTip.innerHTML =
       "You're on an iPhone or iPad. " +
       "<strong>Try opening this page in Safari</strong> " +
       "for voice input. You can still type your swim game idea below.";
 
-
     browserButton.textContent =
       "🌊 How to open in Safari";
-
 
     browserButton.style.display =
       "inline-block";
 
-
     status.textContent =
       "Typing mode — try Safari for voice input.";
-
 
     return false;
 
@@ -1710,24 +1652,19 @@ function checkMicrophoneSupport() {
     warningTitle.textContent =
       "🌊 Voice input isn't available in this browser.";
 
-
     browserTip.innerHTML =
       "You're on Android. " +
       "<strong>Try opening this page in Google Chrome</strong> " +
       "for voice input. You can still type your swim game idea below.";
 
-
     browserButton.textContent =
       "🌊 Open in Chrome";
-
 
     browserButton.style.display =
       "inline-block";
 
-
     status.textContent =
       "Typing mode — try Chrome for voice input.";
-
 
     return false;
 
@@ -1737,26 +1674,70 @@ function checkMicrophoneSupport() {
   warningTitle.textContent =
     "🌊 Voice input isn't available in this browser.";
 
-
   browserTip.innerHTML =
     "You can still type your swim game idea below. " +
     "<strong>Try Google Chrome</strong> " +
     "if you'd like to use your microphone.";
 
-
   browserButton.textContent =
     "🌊 Try another browser";
-
 
   browserButton.style.display =
     "inline-block";
 
-
   status.textContent =
     "Typing mode — try Chrome for voice input.";
 
-
   return false;
+
+}
+
+
+/* =========================================================
+   START ONE SPEECH RECOGNITION SESSION
+   ========================================================= */
+
+function startRecognition() {
+
+  if (
+    !recognition ||
+    !recording ||
+    recognitionActive ||
+    recognitionStarting
+  ) {
+    return;
+  }
+
+
+  recognitionStarting =
+    true;
+
+
+  /*
+    Reset ONLY the temporary session text.
+
+    finalTranscript stays intact.
+  */
+
+  sessionFinalTranscript = "";
+  sessionInterimTranscript = "";
+
+
+  try {
+
+    recognition.start();
+
+  } catch (e) {
+
+    recognitionStarting =
+      false;
+
+    console.log(
+      "Recognition start failed:",
+      e
+    );
+
+  }
 
 }
 
@@ -1772,21 +1753,23 @@ if (SpeechRecognition) {
 
 
   /*
-    IMPORTANT MOBILE FIX
+    IMPORTANT MOBILE FIX:
 
-    Instead of continuous=true, each recognition session
-    ends naturally.
+    Instead of continuous=true, we use short recognition
+    sessions.
 
-    If the user is still recording, onend starts a fresh
-    session.
-
-    This avoids the mobile browser repeatedly replaying
-    speech results during continuous recognition restarts.
+    Mobile browsers are much less likely to duplicate words
+    when each session starts fresh.
   */
 
   recognition.continuous =
     false;
 
+
+  /*
+    Interim results make words appear while the person
+    is talking.
+  */
 
   recognition.interimResults =
     true;
@@ -1796,34 +1779,14 @@ if (SpeechRecognition) {
     "en-CA";
 
 
-  /* =======================================================
-     RECOGNITION START
-     ======================================================= */
-
   recognition.onstart =
     function() {
-
-      recognitionActive =
-        true;
-
 
       recognitionStarting =
         false;
 
-
-      /*
-        New recognition session.
-
-        Anything from the previous session has already been
-        committed by onend.
-      */
-
-      sessionFinalTranscript =
-        "";
-
-
-      sessionInterimTranscript =
-        "";
+      recognitionActive =
+        true;
 
 
       document
@@ -1840,23 +1803,21 @@ if (SpeechRecognition) {
     };
 
 
-  /* =======================================================
-     SPEECH RESULT
-     ======================================================= */
-
   recognition.onresult =
     function(event) {
 
-      let interimText =
+      let newFinal =
+        "";
+
+      let newInterim =
         "";
 
 
       /*
         Only process the results supplied by this event.
 
-        Final speech goes into the current session.
-
-        Interim speech is temporary.
+        Because continuous recognition is OFF, this session
+        is independent from the previous mobile session.
       */
 
       for (
@@ -1875,12 +1836,12 @@ if (SpeechRecognition) {
 
         if (result.isFinal) {
 
-          sessionFinalTranscript +=
-            transcript.trim() + " ";
+          newFinal +=
+            transcript;
 
         } else {
 
-          interimText +=
+          newInterim +=
             transcript;
 
         }
@@ -1888,18 +1849,33 @@ if (SpeechRecognition) {
       }
 
 
+      /*
+        Store the current session's final text.
+
+        It isn't mixed into the permanent transcript until
+        the recognition session ends.
+      */
+
+      if (newFinal.trim()) {
+
+        sessionFinalTranscript +=
+          newFinal.trim() + " ";
+
+      }
+
+
       sessionInterimTranscript =
-        interimText;
+        newInterim;
 
 
       /*
-        Display:
+        Show:
 
-        PERMANENT SPEECH
+        permanent text
         +
-        CURRENT SESSION FINAL SPEECH
+        current session final text
         +
-        CURRENT INTERIM SPEECH
+        current interim text
       */
 
       document
@@ -1912,10 +1888,6 @@ if (SpeechRecognition) {
     };
 
 
-  /* =======================================================
-     SPEECH ERROR
-     ======================================================= */
-
   recognition.onerror =
     function(event) {
 
@@ -1925,9 +1897,15 @@ if (SpeechRecognition) {
       );
 
 
+      recognitionStarting =
+        false;
+
+
       /*
-        Permission problems should completely stop
-        recording.
+        These errors are handled differently.
+
+        no-speech is NOT fatal because the user may simply
+        pause before speaking again.
       */
 
       if (
@@ -1937,15 +1915,6 @@ if (SpeechRecognition) {
 
         recording =
           false;
-
-
-        recognitionStarting =
-          false;
-
-
-        clearTimeout(
-          restartTimer
-        );
 
 
         document
@@ -1959,20 +1928,10 @@ if (SpeechRecognition) {
           .textContent =
           "Microphone permission was blocked. You can still type below.";
 
-
         return;
 
       }
 
-
-      /*
-        no-speech isn't fatal.
-
-        The browser simply didn't hear speech during this
-        particular session.
-
-        onend will restart it automatically.
-      */
 
       if (
         event.error === "no-speech"
@@ -1981,8 +1940,22 @@ if (SpeechRecognition) {
         document
           .getElementById("status")
           .textContent =
-          "Still listening… keep talking!";
+          "Keep talking — listening again…";
 
+        return;
+
+      }
+
+
+      /*
+        Aborted errors commonly happen when a mobile browser
+        closes a recognition session. onend will decide whether
+        another session should begin.
+      */
+
+      if (
+        event.error === "aborted"
+      ) {
 
         return;
 
@@ -1999,34 +1972,23 @@ if (SpeechRecognition) {
     };
 
 
-  /* =======================================================
-     RECOGNITION END
-     ======================================================= */
-
   recognition.onend =
     function() {
 
       console.log(
-        "Speech recognition ended. Recording:",
-        recording
+        "Speech recognition ended."
       );
 
 
       recognitionActive =
         false;
 
-
       recognitionStarting =
         false;
 
 
       /*
-        COMMIT THE CURRENT SESSION
-
-        This happens before deciding whether to restart.
-
-        This means every recognition session gets committed
-        exactly once.
+        Commit this session's final words exactly once.
       */
 
       if (
@@ -2042,13 +2004,12 @@ if (SpeechRecognition) {
       sessionFinalTranscript =
         "";
 
-
       sessionInterimTranscript =
         "";
 
 
       /*
-        Make textarea contain only permanent speech.
+        Update textarea with ONLY permanent text.
       */
 
       document
@@ -2058,12 +2019,49 @@ if (SpeechRecognition) {
 
 
       /*
-        USER STOPPED RECORDING
+        If the user still wants to record, restart after
+        a small delay.
 
-        Do not restart.
+        The delay is important on phones because immediately
+        calling recognition.start() inside onend can cause
+        overlapping sessions or duplicated results.
       */
 
-      if (!recording) {
+      if (recording) {
+
+        if (restartTimer) {
+
+          clearTimeout(
+            restartTimer
+          );
+
+        }
+
+
+        restartTimer =
+          setTimeout(
+            function() {
+
+              restartTimer =
+                null;
+
+
+              if (
+                recording &&
+                !recognitionActive &&
+                !recognitionStarting
+              ) {
+
+                startRecognition();
+
+              }
+
+            },
+            300
+          );
+
+
+      } else {
 
         document
           .getElementById("micButton")
@@ -2076,115 +2074,7 @@ if (SpeechRecognition) {
           .textContent =
           "Idea captured! You can edit it below.";
 
-
-        return;
-
       }
-
-
-      /*
-        BROWSER STOPPED RECOGNITION
-
-        The user still wants to record, so start a new
-        recognition session.
-
-        IMPORTANT:
-        We wait 250ms before restarting. This is especially
-        helpful on phones.
-      */
-
-      clearTimeout(
-        restartTimer
-      );
-
-
-      restartTimer =
-        setTimeout(
-          function() {
-
-            if (
-              !recording ||
-              recognitionActive ||
-              recognitionStarting
-            ) {
-
-              return;
-
-            }
-
-
-            recognitionStarting =
-              true;
-
-
-            try {
-
-              recognition.start();
-
-            } catch (e) {
-
-              recognitionStarting =
-                false;
-
-
-              console.log(
-                "Recognition restart failed:",
-                e
-              );
-
-
-              /*
-                If the phone still isn't ready, give it
-                another moment and try once more.
-              */
-
-              clearTimeout(
-                restartTimer
-              );
-
-
-              restartTimer =
-                setTimeout(
-                  function() {
-
-                    if (
-                      recording &&
-                      !recognitionActive &&
-                      !recognitionStarting
-                    ) {
-
-                      recognitionStarting =
-                        true;
-
-
-                      try {
-
-                        recognition.start();
-
-                      } catch (retryError) {
-
-                        recognitionStarting =
-                          false;
-
-
-                        console.log(
-                          "Recognition retry failed:",
-                          retryError
-                        );
-
-                      }
-
-                    }
-
-                  },
-                  400
-                );
-
-            }
-
-          },
-          250
-        );
 
     };
 
@@ -2215,123 +2105,38 @@ function toggleRecording() {
 
   if (!recording) {
 
-    /*
-      Cancel any old restart attempt.
-    */
-
-    clearTimeout(
-      restartTimer
-    );
+    recording =
+      true;
 
 
     /*
-      Whatever is already in the textarea becomes the
-      permanent starting text.
+      Keep anything the instructor has already typed.
 
-      This means the user can type something first and then
-      continue speaking.
+      This lets them tap the microphone and continue their
+      existing sentence.
     */
 
-    finalTranscript =
+    const existingText =
       document
         .getElementById("mess")
         .value
         .trim();
 
 
-    if (finalTranscript) {
-
-      finalTranscript +=
-        " ";
-
-    }
+    finalTranscript =
+      existingText
+        ? existingText + " "
+        : "";
 
 
     sessionFinalTranscript =
       "";
 
-
     sessionInterimTranscript =
       "";
 
 
-    recording =
-      true;
-
-
-    recognitionStarting =
-      true;
-
-
-    try {
-
-      recognition.start();
-
-    } catch (e) {
-
-      recognitionStarting =
-        false;
-
-
-      console.log(
-        "Recognition start failed:",
-        e
-      );
-
-
-      /*
-        Sometimes a previous recognition session is still
-        closing. Give the browser a moment.
-      */
-
-      setTimeout(
-        function() {
-
-          if (
-            recording &&
-            !recognitionActive &&
-            !recognitionStarting
-          ) {
-
-            recognitionStarting =
-              true;
-
-
-            try {
-
-              recognition.start();
-
-            } catch (retryError) {
-
-              recognitionStarting =
-                false;
-
-
-              recording =
-                false;
-
-
-              console.log(
-                "Recognition retry failed:",
-                retryError
-              );
-
-
-              document
-                .getElementById("status")
-                .textContent =
-                "Couldn't start the microphone. You can still type below.";
-
-            }
-
-          }
-
-        },
-        400
-      );
-
-    }
-
+    startRecognition();
 
     return;
 
@@ -2346,21 +2151,49 @@ function toggleRecording() {
     false;
 
 
-  clearTimeout(
-    restartTimer
-  );
+  /*
+    Cancel any scheduled mobile restart.
+  */
 
+  if (restartTimer) {
 
-  recognitionStarting =
-    false;
+    clearTimeout(
+      restartTimer
+    );
+
+    restartTimer =
+      null;
+
+  }
 
 
   /*
-    Stop the current recognition session.
-
-    onend will commit any final speech and will see that
-    recording=false, so it will NOT restart.
+    Commit any final words already received during the
+    current session before stopping.
   */
+
+  if (
+    sessionFinalTranscript
+  ) {
+
+    finalTranscript +=
+      sessionFinalTranscript;
+
+  }
+
+
+  sessionFinalTranscript =
+    "";
+
+  sessionInterimTranscript =
+    "";
+
+
+  document
+    .getElementById("mess")
+    .value =
+    finalTranscript;
+
 
   try {
 
@@ -2369,11 +2202,18 @@ function toggleRecording() {
   } catch (e) {
 
     console.log(
-      "Recognition stop:",
+      "Recognition stop failed:",
       e
     );
 
   }
+
+
+  recognitionActive =
+    false;
+
+  recognitionStarting =
+    false;
 
 
   document
@@ -2490,12 +2330,6 @@ function updateLoadingMessage() {
     message;
 
 
-  /*
-    At 30 seconds, offer a manual retry.
-
-    We NEVER automatically send a second request.
-  */
-
   if (
     elapsed >= RETRY_TIMEOUT &&
     !retryAvailable
@@ -2532,7 +2366,6 @@ function stopLoadingAnimation() {
     clearInterval(
       loadingTimer
     );
-
 
     loadingTimer =
       null;
@@ -2592,10 +2425,42 @@ function sendGameRequest(mess) {
     requestId;
 
 
+  /*
+    ========================================================
+    CREATIVE INPUT INSTRUCTION
+    ========================================================
+
+    This is added AFTER the instructor's messy idea.
+
+    The AI should preserve the actual game, but it should
+    NOT answer "None" simply because the teacher didn't
+    explicitly provide variations or bonus ideas.
+
+    We want the AI to contribute useful teaching creativity.
+    ========================================================
+  */
+
+  const enhancedMess =
+    mess +
+    "\n\n" +
+    "EDITOR NOTE — CREATIVE INPUT REQUIRED: " +
+    "Preserve the teacher's actual game idea and do not replace " +
+    "the core activity. However, the finished game should include " +
+    "useful creative teaching input. Do NOT write 'None.' for " +
+    "Variations/Options or Sample Scenes/Bonus Rules/Ideas merely " +
+    "because the teacher did not provide any. Create 2–3 genuinely " +
+    "useful variations or scaling options that naturally fit this " +
+    "specific game, and 1–2 fun sample lines, bonus rules, or ideas " +
+    "that a swim instructor could realistically use. These additions " +
+    "should be simple, age-appropriate, pool-appropriate, and clearly " +
+    "connected to the actual game. Do not add unrelated equipment, " +
+    "skills, hazards, or complicated mechanics.";
+
+
   document
     .getElementById("appsScriptMess")
     .value =
-    mess;
+    enhancedMess;
 
 
   document
@@ -2631,8 +2496,59 @@ function generateGame() {
       .textContent =
       "Tell me your swim game idea first!";
 
-
     return;
+
+  }
+
+
+  /*
+    If the microphone is currently recording, stop it before
+    sending the idea.
+
+    This prevents speech recognition from continuing while
+    the AI request is being created.
+  */
+
+  if (recording) {
+
+    recording =
+      false;
+
+
+    if (restartTimer) {
+
+      clearTimeout(
+        restartTimer
+      );
+
+      restartTimer =
+        null;
+
+    }
+
+
+    try {
+
+      recognition.stop();
+
+    } catch (e) {
+
+      console.log(e);
+
+    }
+
+
+    recognitionActive =
+      false;
+
+    recognitionStarting =
+      false;
+
+
+    document
+      .getElementById("micButton")
+      .classList
+      .remove("recording");
 
   }
 
@@ -2792,7 +2708,6 @@ window.addEventListener(
         "Old request ignored."
       );
 
-
       return;
 
     }
@@ -2803,9 +2718,7 @@ window.addEventListener(
 
     const generateButton =
       document
-        .getElementById(
-          "generateButton"
-        );
+        .getElementById("generateButton");
 
 
     generateButton
@@ -2875,12 +2788,6 @@ window.addEventListener(
 
     showGameSurfaced();
 
-
-    /*
-      IMPORTANT:
-
-      Apps Script returns the generated game as "result".
-    */
 
     document
       .getElementById("result")
@@ -3072,7 +2979,6 @@ function printResult() {
 
   printWindow.document.close();
 
-
   printWindow.print();
 
 }
@@ -3113,17 +3019,23 @@ function clearResult() {
 
 
   /*
-    Stop microphone completely if the user clears while
-    recording.
+    Stop speech recognition too.
   */
 
   recording =
     false;
 
 
-  clearTimeout(
-    restartTimer
-  );
+  if (restartTimer) {
+
+    clearTimeout(
+      restartTimer
+    );
+
+    restartTimer =
+      null;
+
+  }
 
 
   if (recognition) {
@@ -3144,17 +3056,8 @@ function clearResult() {
   recognitionActive =
     false;
 
-
   recognitionStarting =
     false;
-
-
-  sessionFinalTranscript =
-    "";
-
-
-  sessionInterimTranscript =
-    "";
 
 
   document
@@ -3196,14 +3099,17 @@ function clearResult() {
   finalTranscript =
     "";
 
+  sessionFinalTranscript =
+    "";
+
+  sessionInterimTranscript =
+    "";
 
   lastMess =
     "";
 
-
   activeRequestId =
     "";
-
 
   retryAvailable =
     false;
