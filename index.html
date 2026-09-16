@@ -310,9 +310,9 @@ h1 {
 
   max-width: 600px;
 
-  padding: 13px 16px;
+  padding: 16px 17px;
 
-  border-radius: 16px;
+  border-radius: 18px;
 
   background: rgba(255, 213, 94, 0.16);
 
@@ -322,11 +322,41 @@ h1 {
 
   font-size: 14px;
 
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 #micWarning strong {
   color: white;
+}
+
+#browserTip {
+  margin-top: 8px;
+}
+
+#browserButton {
+  display: none;
+
+  margin: 13px auto 0;
+
+  padding: 10px 16px;
+
+  border: 2px solid rgba(255,255,255,0.75);
+
+  border-radius: 12px;
+
+  background: rgba(255,255,255,0.16);
+
+  color: white;
+
+  font-size: 14px;
+
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+#browserButton:hover {
+  background: rgba(255,255,255,0.25);
 }
 
 
@@ -723,12 +753,20 @@ textarea::placeholder {
 
   <div id="micWarning">
 
-    <strong>🌊 Voice input isn't available here.</strong><br>
+    <strong id="warningTitle">
+      🌊 Voice input isn't available here.
+    </strong>
 
-    This browser doesn't support speech recognition.
-    You can still type your swim game idea below,
-    or try opening this page in a supported version of
-    Chrome or Safari.
+    <div id="browserTip">
+      This browser doesn't support speech recognition.
+      You can still type your swim game idea below.
+    </div>
+
+    <button
+      id="browserButton"
+      onclick="tryOpenSupportedBrowser()">
+      🌊 Try opening in a supported browser
+    </button>
 
   </div>
 
@@ -866,6 +904,145 @@ let finalTranscript = "";
 
 
 /* =========================================================
+   DEVICE / BROWSER DETECTION
+   ========================================================= */
+
+function getDeviceType() {
+
+  const ua =
+    navigator.userAgent ||
+    navigator.vendor ||
+    window.opera;
+
+  const isIOS =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (
+      navigator.platform === "MacIntel" &&
+      navigator.maxTouchPoints > 1
+    );
+
+  const isAndroid =
+    /Android/i.test(ua);
+
+  if (isIOS) {
+    return "ios";
+  }
+
+  if (isAndroid) {
+    return "android";
+  }
+
+  return "desktop";
+
+}
+
+
+function getBrowserType() {
+
+  const ua =
+    navigator.userAgent ||
+    "";
+
+  if (/Edg/i.test(ua)) {
+    return "edge";
+  }
+
+  if (/Firefox/i.test(ua)) {
+    return "firefox";
+  }
+
+  if (/CriOS/i.test(ua)) {
+    return "chrome-ios";
+  }
+
+  if (/Chrome/i.test(ua)) {
+    return "chrome";
+  }
+
+  if (/Safari/i.test(ua)) {
+    return "safari";
+  }
+
+  return "other";
+
+}
+
+
+/* =========================================================
+   TRY TO OPEN A SUPPORTED BROWSER
+   ========================================================= */
+
+function tryOpenSupportedBrowser() {
+
+  const device =
+    getDeviceType();
+
+  const currentUrl =
+    window.location.href;
+
+
+  /*
+    Android Chrome intent.
+
+    This asks Android to open the current page
+    using Chrome when possible.
+  */
+
+  if (device === "android") {
+
+    const cleanUrl =
+      currentUrl.replace(
+        /^https?:\/\//,
+        ""
+      );
+
+
+    window.location.href =
+      "intent://" +
+      cleanUrl +
+      "#Intent;scheme=https;package=com.android.chrome;end";
+
+    return;
+
+  }
+
+
+  /*
+    On iPhone/iPad we cannot reliably force
+    Safari from a normal webpage.
+
+    Instead, show the user the exact instruction.
+  */
+
+  if (device === "ios") {
+
+    alert(
+      "Please open this page in Safari for voice input.\n\n" +
+      "Copy this page address and paste it into Safari."
+    );
+
+    return;
+
+  }
+
+
+  /*
+    Desktop fallback.
+
+    Open the current page in a new tab.
+    The user can then choose Chrome or another
+    supported browser if needed.
+  */
+
+  window.open(
+    currentUrl,
+    "_blank"
+  );
+
+}
+
+
+/* =========================================================
    CHECK MICROPHONE / BROWSER SUPPORT
    ========================================================= */
 
@@ -883,6 +1060,22 @@ function checkMicrophoneSupport() {
   const warning =
     document.getElementById("micWarning");
 
+  const warningTitle =
+    document.getElementById("warningTitle");
+
+  const browserTip =
+    document.getElementById("browserTip");
+
+  const browserButton =
+    document.getElementById("browserButton");
+
+
+  const device =
+    getDeviceType();
+
+  const browser =
+    getBrowserType();
+
 
   if (SpeechRecognition) {
 
@@ -895,21 +1088,29 @@ function checkMicrophoneSupport() {
     warning.style.display =
       "none";
 
+    browserButton.style.display =
+      "none";
+
     micButton.disabled =
       false;
+
+    micButton.style.opacity =
+      "1";
+
+    micButton.style.cursor =
+      "pointer";
 
     return true;
 
   }
 
 
-  /* Browser does not support speech recognition */
+  /* =======================================================
+     NO SPEECH RECOGNITION
+     ======================================================= */
 
   supportStatus.textContent =
     "Typing mode";
-
-  status.textContent =
-    "You can type your game idea below.";
 
   warning.style.display =
     "block";
@@ -922,6 +1123,84 @@ function checkMicrophoneSupport() {
 
   micButton.style.cursor =
     "not-allowed";
+
+
+  /* =======================================================
+     iPHONE / iPAD
+     ======================================================= */
+
+  if (device === "ios") {
+
+    warningTitle.textContent =
+      "🌊 Voice input isn't available in this browser.";
+
+    browserTip.innerHTML =
+      "You're on an iPhone or iPad. " +
+      "<strong>Try opening this page in Safari</strong> " +
+      "for voice input. You can still type your swim game idea below.";
+
+    browserButton.textContent =
+      "🌊 How to open in Safari";
+
+    browserButton.style.display =
+      "inline-block";
+
+    status.textContent =
+      "Typing mode — try Safari for voice input.";
+
+    return false;
+
+  }
+
+
+  /* =======================================================
+     ANDROID
+     ======================================================= */
+
+  if (device === "android") {
+
+    warningTitle.textContent =
+      "🌊 Voice input isn't available in this browser.";
+
+    browserTip.innerHTML =
+      "You're on Android. " +
+      "<strong>Try opening this page in Google Chrome</strong> " +
+      "for voice input. You can still type your swim game idea below.";
+
+    browserButton.textContent =
+      "🌊 Open in Chrome";
+
+    browserButton.style.display =
+      "inline-block";
+
+    status.textContent =
+      "Typing mode — try Chrome for voice input.";
+
+    return false;
+
+  }
+
+
+  /* =======================================================
+     DESKTOP
+     ======================================================= */
+
+  warningTitle.textContent =
+    "🌊 Voice input isn't available in this browser.";
+
+  browserTip.innerHTML =
+    "You can still type your swim game idea below. " +
+    "<strong>Try Google Chrome</strong> " +
+    "if you'd like to use your microphone.";
+
+  browserButton.textContent =
+    "🌊 Try another browser";
+
+  browserButton.style.display =
+    "inline-block";
+
+  status.textContent =
+    "Typing mode — try Chrome for voice input.";
 
   return false;
 
@@ -1278,14 +1557,14 @@ window.addEventListener(
       document.getElementById(
         "result"
       ).textContent =
-        "Something went wrong:\n\n" +
-        data.error;
+      "Something went wrong:\n\n" +
+      data.error;
 
 
       document.getElementById(
         "status"
       ).textContent =
-        "Let's try that again.";
+      "Let's try that again.";
 
       return;
 
