@@ -1379,19 +1379,27 @@ const SpeechRecognition =
 
 let recognition = null;
 
-/*
-  recording = what the USER wants.
 
-  recognitionActive = whether the browser currently has
-  an active speech recognition session.
+/*
+  IMPORTANT:
+
+  recording means the user is CURRENTLY asking the microphone
+  to listen.
+
+  Unlike the previous version, we DO NOT automatically restart
+  recognition when a mobile browser ends a session.
+
+  Mobile browsers commonly end speech recognition after a
+  natural pause. That is okay.
+
+  The user can simply tap the microphone again to continue.
 */
 
 let recording = false;
+
 let recognitionActive = false;
 
 let recognitionStarting = false;
-
-let restartTimer = null;
 
 
 /*
@@ -1403,12 +1411,10 @@ let finalTranscript = "";
 
 /*
   Temporary transcript from the current recognition session.
-
-  We don't immediately mix this into finalTranscript.
-  This is important for mobile browsers.
 */
 
 let sessionFinalTranscript = "";
+
 let sessionInterimTranscript = "";
 
 
@@ -1425,7 +1431,6 @@ let lastMess = "";
 let activeRequestId = "";
 
 let retryAvailable = false;
-
 
 const RETRY_TIMEOUT = 30000;
 
@@ -1701,7 +1706,6 @@ function startRecognition() {
 
   if (
     !recognition ||
-    !recording ||
     recognitionActive ||
     recognitionStarting
   ) {
@@ -1714,13 +1718,17 @@ function startRecognition() {
 
 
   /*
-    Reset ONLY the temporary session text.
+    Each microphone tap starts a completely fresh speech
+    recognition session.
 
     finalTranscript stays intact.
   */
 
-  sessionFinalTranscript = "";
-  sessionInterimTranscript = "";
+  sessionFinalTranscript =
+    "";
+
+  sessionInterimTranscript =
+    "";
 
 
   try {
@@ -1753,23 +1761,20 @@ if (SpeechRecognition) {
 
 
   /*
-    IMPORTANT MOBILE FIX:
+    MOBILE FIX:
 
-    Instead of continuous=true, we use short recognition
-    sessions.
+    Continuous recognition is OFF.
 
-    Mobile browsers are much less likely to duplicate words
-    when each session starts fresh.
+    The browser is allowed to naturally end a session when
+    the speaker pauses.
+
+    IMPORTANT:
+    onend will NOT restart it automatically.
   */
 
   recognition.continuous =
     false;
 
-
-  /*
-    Interim results make words appear while the person
-    is talking.
-  */
 
   recognition.interimResults =
     true;
@@ -1778,6 +1783,10 @@ if (SpeechRecognition) {
   recognition.lang =
     "en-CA";
 
+
+  /* =======================================================
+     RECOGNITION STARTED
+     ======================================================= */
 
   recognition.onstart =
     function() {
@@ -1803,6 +1812,10 @@ if (SpeechRecognition) {
     };
 
 
+  /* =======================================================
+     SPEECH RESULT
+     ======================================================= */
+
   recognition.onresult =
     function(event) {
 
@@ -1812,13 +1825,6 @@ if (SpeechRecognition) {
       let newInterim =
         "";
 
-
-      /*
-        Only process the results supplied by this event.
-
-        Because continuous recognition is OFF, this session
-        is independent from the previous mobile session.
-      */
 
       for (
         let i = event.resultIndex;
@@ -1850,16 +1856,14 @@ if (SpeechRecognition) {
 
 
       /*
-        Store the current session's final text.
-
-        It isn't mixed into the permanent transcript until
-        the recognition session ends.
+        Save final words from this session.
       */
 
       if (newFinal.trim()) {
 
         sessionFinalTranscript +=
-          newFinal.trim() + " ";
+          newFinal.trim() +
+          " ";
 
       }
 
@@ -1869,9 +1873,9 @@ if (SpeechRecognition) {
 
 
       /*
-        Show:
+        Display:
 
-        permanent text
+        old permanent text
         +
         current session final text
         +
@@ -1888,6 +1892,10 @@ if (SpeechRecognition) {
     };
 
 
+  /* =======================================================
+     RECOGNITION ERROR
+     ======================================================= */
+
   recognition.onerror =
     function(event) {
 
@@ -1902,10 +1910,7 @@ if (SpeechRecognition) {
 
 
       /*
-        These errors are handled differently.
-
-        no-speech is NOT fatal because the user may simply
-        pause before speaking again.
+        Permission errors really do stop recording.
       */
 
       if (
@@ -1914,6 +1919,10 @@ if (SpeechRecognition) {
       ) {
 
         recording =
+          false;
+
+
+        recognitionActive =
           false;
 
 
@@ -1933,14 +1942,35 @@ if (SpeechRecognition) {
       }
 
 
+      /*
+        A no-speech result simply means the browser didn't
+        hear anything during this session.
+
+        We do NOT restart automatically.
+      */
+
       if (
         event.error === "no-speech"
       ) {
 
+        recording =
+          false;
+
+
+        recognitionActive =
+          false;
+
+
+        document
+          .getElementById("micButton")
+          .classList
+          .remove("recording");
+
+
         document
           .getElementById("status")
           .textContent =
-          "Keep talking — listening again…";
+          "I didn't hear anything. Tap the microphone to try again.";
 
         return;
 
@@ -1948,9 +1978,7 @@ if (SpeechRecognition) {
 
 
       /*
-        Aborted errors commonly happen when a mobile browser
-        closes a recognition session. onend will decide whether
-        another session should begin.
+        Aborted can happen when the browser closes a session.
       */
 
       if (
@@ -1971,6 +1999,10 @@ if (SpeechRecognition) {
 
     };
 
+
+  /* =======================================================
+     RECOGNITION ENDED
+     ======================================================= */
 
   recognition.onend =
     function() {
@@ -2009,7 +2041,7 @@ if (SpeechRecognition) {
 
 
       /*
-        Update textarea with ONLY permanent text.
+        Show only the permanent transcript.
       */
 
       document
@@ -2019,62 +2051,37 @@ if (SpeechRecognition) {
 
 
       /*
-        If the user still wants to record, restart after
-        a small delay.
+        IMPORTANT MOBILE FIX:
 
-        The delay is important on phones because immediately
-        calling recognition.start() inside onend can cause
-        overlapping sessions or duplicated results.
+        DO NOT restart recognition here.
+
+        The old version did:
+
+          if (recording) {
+              startRecognition();
+          }
+
+        That caused the microphone to make a restart noise
+        every time the phone naturally ended a speech session.
+
+        Now the session simply ends and the user can tap
+        the microphone again when they want to continue.
       */
 
-      if (recording) {
-
-        if (restartTimer) {
-
-          clearTimeout(
-            restartTimer
-          );
-
-        }
+      recording =
+        false;
 
 
-        restartTimer =
-          setTimeout(
-            function() {
-
-              restartTimer =
-                null;
+      document
+        .getElementById("micButton")
+        .classList
+        .remove("recording");
 
 
-              if (
-                recording &&
-                !recognitionActive &&
-                !recognitionStarting
-              ) {
-
-                startRecognition();
-
-              }
-
-            },
-            300
-          );
-
-
-      } else {
-
-        document
-          .getElementById("micButton")
-          .classList
-          .remove("recording");
-
-
-        document
-          .getElementById("status")
-          .textContent =
-          "Idea captured! You can edit it below.";
-
-      }
+      document
+        .getElementById("status")
+        .textContent =
+        "Idea captured! Tap the microphone to add more, or edit it below.";
 
     };
 
@@ -2100,7 +2107,9 @@ function toggleRecording() {
 
 
   /*
+    ========================================================
     START RECORDING
+    ========================================================
   */
 
   if (!recording) {
@@ -2110,10 +2119,16 @@ function toggleRecording() {
 
 
     /*
-      Keep anything the instructor has already typed.
+      Preserve anything already in the text box.
 
-      This lets them tap the microphone and continue their
-      existing sentence.
+      This means you can:
+
+      1. Talk
+      2. Let mobile naturally stop listening
+      3. Tap the microphone
+      4. Talk some more
+
+      Everything gets added together.
     */
 
     const existingText =
@@ -2144,7 +2159,9 @@ function toggleRecording() {
 
 
   /*
-    STOP RECORDING
+    ========================================================
+    MANUAL STOP
+    ========================================================
   */
 
   recording =
@@ -2152,24 +2169,7 @@ function toggleRecording() {
 
 
   /*
-    Cancel any scheduled mobile restart.
-  */
-
-  if (restartTimer) {
-
-    clearTimeout(
-      restartTimer
-    );
-
-    restartTimer =
-      null;
-
-  }
-
-
-  /*
-    Commit any final words already received during the
-    current session before stopping.
+    Commit any final words already received.
   */
 
   if (
@@ -2430,13 +2430,9 @@ function sendGameRequest(mess) {
     CREATIVE INPUT INSTRUCTION
     ========================================================
 
-    This is added AFTER the instructor's messy idea.
-
-    The AI should preserve the actual game, but it should
-    NOT answer "None" simply because the teacher didn't
-    explicitly provide variations or bonus ideas.
-
-    We want the AI to contribute useful teaching creativity.
+    This tells the AI to contribute useful creative ideas
+    instead of automatically filling these sections with
+    "None."
     ========================================================
   */
 
@@ -2482,6 +2478,95 @@ function sendGameRequest(mess) {
 
 function generateGame() {
 
+  /*
+    ========================================================
+    FIRST: STOP THE MICROPHONE
+    ========================================================
+
+    This happens BEFORE anything else.
+
+    That means pressing the yellow button can never leave
+    speech recognition running in the background.
+    ========================================================
+  */
+
+  if (recording || recognitionActive) {
+
+    recording =
+      false;
+
+
+    recognitionStarting =
+      false;
+
+
+    /*
+      Commit any final speech that has already arrived.
+    */
+
+    if (
+      sessionFinalTranscript
+    ) {
+
+      finalTranscript +=
+        sessionFinalTranscript;
+
+    }
+
+
+    sessionFinalTranscript =
+      "";
+
+    sessionInterimTranscript =
+      "";
+
+
+    /*
+      Stop the browser microphone.
+    */
+
+    if (recognition) {
+
+      try {
+
+        recognition.abort();
+
+      } catch (e) {
+
+        console.log(
+          "Recognition abort failed:",
+          e
+        );
+
+      }
+
+    }
+
+
+    recognitionActive =
+      false;
+
+
+    document
+      .getElementById("micButton")
+      .classList
+      .remove("recording");
+
+
+    document
+      .getElementById("mess")
+      .value =
+      finalTranscript;
+
+  }
+
+
+  /*
+    ========================================================
+    NOW READ THE IDEA
+    ========================================================
+  */
+
   const mess =
     document
       .getElementById("mess")
@@ -2497,58 +2582,6 @@ function generateGame() {
       "Tell me your swim game idea first!";
 
     return;
-
-  }
-
-
-  /*
-    If the microphone is currently recording, stop it before
-    sending the idea.
-
-    This prevents speech recognition from continuing while
-    the AI request is being created.
-  */
-
-  if (recording) {
-
-    recording =
-      false;
-
-
-    if (restartTimer) {
-
-      clearTimeout(
-        restartTimer
-      );
-
-      restartTimer =
-        null;
-
-    }
-
-
-    try {
-
-      recognition.stop();
-
-    } catch (e) {
-
-      console.log(e);
-
-    }
-
-
-    recognitionActive =
-      false;
-
-    recognitionStarting =
-      false;
-
-
-    document
-      .getElementById("micButton")
-      .classList
-      .remove("recording");
 
   }
 
@@ -3015,34 +3048,22 @@ function saveResult() {
 
 function clearResult() {
 
-  stopLoadingAnimation();
-
-
   /*
-    Stop speech recognition too.
+    Stop everything.
   */
 
   recording =
     false;
 
-
-  if (restartTimer) {
-
-    clearTimeout(
-      restartTimer
-    );
-
-    restartTimer =
-      null;
-
-  }
+  recognitionStarting =
+    false;
 
 
   if (recognition) {
 
     try {
 
-      recognition.stop();
+      recognition.abort();
 
     } catch (e) {
 
@@ -3056,8 +3077,8 @@ function clearResult() {
   recognitionActive =
     false;
 
-  recognitionStarting =
-    false;
+
+  stopLoadingAnimation();
 
 
   document
