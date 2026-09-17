@@ -1095,6 +1095,8 @@ let retryAvailable = false;
 const RETRY_TIMEOUT = 45000;
 
 let isHolding = false;
+let autoRestartTimeout = null;
+let restartAttempts = 0;
 
 
 /* =========================================================
@@ -1142,6 +1144,7 @@ function createRecognition() {
 
       recognitionStarting = false;
       recognitionActive = true;
+      restartAttempts = 0;
 
       const btn = $("micButton");
 
@@ -1152,6 +1155,9 @@ function createRecognition() {
       if (!isMobile) {
         $("status").textContent =
           "Listening… tell me your messy idea!";
+      } else if (isHolding) {
+        $("status").textContent =
+          "Listening… keep holding and talking!";
       }
     };
 
@@ -1218,7 +1224,13 @@ function createRecognition() {
       ) {
 
         recording = false;
+        isHolding = false;
         recognitionActive = false;
+
+        if (autoRestartTimeout) {
+          clearTimeout(autoRestartTimeout);
+          autoRestartTimeout = null;
+        }
 
         const btn = $("micButton");
 
@@ -1226,11 +1238,19 @@ function createRecognition() {
           btn.classList.remove("recording");
         }
 
+        $("holdToTalkBtn").classList.remove("recording");
+
         $("status").textContent =
           "Microphone permission was blocked. You can still type below.";
 
         return;
       }
+
+      /* "no-speech" is the normal case when someone pauses
+         mid-sentence on mobile. Let onend decide whether to
+         auto-restart (if the hold button is still down) or
+         finalize (if it was released). Don't touch status here
+         so we don't flash a scary message during a normal pause. */
 
       if (event.error === "no-speech") {
         return;
@@ -1259,6 +1279,83 @@ function createRecognition() {
 
       recognitionActive = false;
       recognitionStarting = false;
+
+
+      /* =====================================================
+         MOBILE HOLD-TO-TALK AUTO-RESTART
+
+         Android Chrome silently stops a non-continuous
+         recognition session after a few seconds of silence,
+         even while the hold button is still pressed. Rather
+         than treating that as "the user let go", stash what
+         was heard so far and kick off a brand-new session so
+         it feels continuous. We keep continuous = false
+         (chaining single-shot sessions) instead of using
+         continuous = true, which is what caused the earlier
+         doubled/echoing words on Android Chrome.
+         ===================================================== */
+
+      if (isMobile && isHolding) {
+
+        if (sessionFinalTranscript) {
+          finalTranscript += sessionFinalTranscript;
+        }
+
+        sessionFinalTranscript = "";
+        sessionInterimTranscript = "";
+
+        $("mess").value = finalTranscript;
+
+        restartAttempts++;
+
+        if (restartAttempts > 40) {
+          // Safety valve: something is wrong (e.g. rapid
+          // error loop) — stop trying rather than hammer the API.
+          isHolding = false;
+          $("holdToTalkBtn").classList.remove("recording");
+          $("status").textContent =
+            "Microphone kept dropping — tap Hold to Talk again to keep going.";
+          return;
+        }
+
+        if (autoRestartTimeout) {
+          clearTimeout(autoRestartTimeout);
+        }
+
+        autoRestartTimeout = setTimeout(function() {
+
+          autoRestartTimeout = null;
+
+          if (!isHolding) return;
+
+          try {
+            recognitionStarting = true;
+            recognition.start();
+          } catch (e) {
+            console.log("Auto-restart failed:", e);
+            recognitionStarting = false;
+            // Try once more shortly — start() can throw if
+            // called a beat too soon after the previous end.
+            autoRestartTimeout = setTimeout(function() {
+              autoRestartTimeout = null;
+              if (!isHolding) return;
+              try {
+                recognitionStarting = true;
+                recognition.start();
+              } catch (e2) {
+                recognitionStarting = false;
+                isHolding = false;
+                $("holdToTalkBtn").classList.remove("recording");
+                $("status").textContent =
+                  "Lost the microphone — tap Hold to Talk again.";
+              }
+            }, 300);
+          }
+
+        }, 200);
+
+        return;
+      }
 
 
       if (sessionFinalTranscript) {
@@ -1321,6 +1418,14 @@ function createRecognition() {
 
       holdBtn.addEventListener(
         "touchend",
+        function(e) {
+          e.preventDefault();
+          stopHoldRecording();
+        }
+      );
+
+      holdBtn.addEventListener(
+        "touchcancel",
         function(e) {
           e.preventDefault();
           stopHoldRecording();
@@ -1397,7 +1502,13 @@ function startHoldRecording() {
     return;
   }
 
+  if (autoRestartTimeout) {
+    clearTimeout(autoRestartTimeout);
+    autoRestartTimeout = null;
+  }
+
   isHolding = true;
+  restartAttempts = 0;
 
   $("holdToTalkBtn")
     .classList
@@ -1406,8 +1517,26 @@ function startHoldRecording() {
   $("status").textContent =
     "Listening… tell me your messy idea!";
 
+  const existingText =
+    $("mess").value.trim();
+
+  finalTranscript =
+    existingText
+      ? existingText + " "
+      : "";
+
+  sessionFinalTranscript = "";
+  sessionInterimTranscript = "";
+
+  if (recognitionActive) {
+    // A previous session is still winding down — let its
+    // onend handler pick up isHolding and start fresh.
+    return;
+  }
+
   try {
 
+    recognitionStarting = true;
     recognition.start();
 
   } catch(e) {
@@ -1416,6 +1545,8 @@ function startHoldRecording() {
       "Hold start failed:",
       e
     );
+
+    recognitionStarting = false;
   }
 }
 
@@ -1427,6 +1558,11 @@ function stopHoldRecording() {
   }
 
   isHolding = false;
+
+  if (autoRestartTimeout) {
+    clearTimeout(autoRestartTimeout);
+    autoRestartTimeout = null;
+  }
 
   $("holdToTalkBtn")
     .classList
@@ -1922,11 +2058,18 @@ function generateGame() {
 
   if (
     recording ||
-    recognitionActive
+    recognitionActive ||
+    isHolding
   ) {
 
     recording = false;
+    isHolding = false;
     recognitionStarting = false;
+
+    if (autoRestartTimeout) {
+      clearTimeout(autoRestartTimeout);
+      autoRestartTimeout = null;
+    }
 
     if (sessionFinalTranscript) {
 
@@ -1947,6 +2090,10 @@ function generateGame() {
     recognitionActive = false;
 
     $("micButton")
+      .classList
+      .remove("recording");
+
+    $("holdToTalkBtn")
       .classList
       .remove("recording");
 
@@ -2327,7 +2474,13 @@ function saveResult() {
 function clearResult() {
 
   recording = false;
+  isHolding = false;
   recognitionStarting = false;
+
+  if (autoRestartTimeout) {
+    clearTimeout(autoRestartTimeout);
+    autoRestartTimeout = null;
+  }
 
 
   if (recognition) {
