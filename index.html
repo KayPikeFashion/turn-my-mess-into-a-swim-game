@@ -475,28 +475,47 @@ function retryGame() {
   startLoadingAnimation();
   sendGameRequest(lastMess);
 }
-
 window.addEventListener("message", function(event) {
   console.log("Message received:", event.data);
   const data = event.data;
   if (!data || data.type !== "swimGameResult") return;
+
   const currentRequestId = document.getElementById("appsScriptRequestId").value;
   if (data.requestId !== currentRequestId) { console.log("Old request ignored."); return; }
+
   stopLoadingAnimation();
   const generateButton = document.getElementById("generateButton");
   generateButton.classList.remove("loading");
   generateButton.textContent = "🫧 Turn My Mess Into A Swim Game";
   document.getElementById("retryArea").style.display = "none";
   retryAvailable = false;
+
   if (data.error) {
     document.getElementById("loadingOcean").style.display = "none";
-    document.getElementById("result").textContent = "Something went wrong:\n\n" + data.error;
+    
+    // Show EXACT backend error with clear formatting
+    let displayError = data.error;
+    const cleanError = data.error.toLowerCase();
+    
+    if (cleanError.includes("429") || cleanError.includes("rate limit")) {
+      displayError = "🚫 RATE LIMIT HIT\nGroq's free tier is throttling requests.\nWait 10 minutes with ZERO requests, then try again.";
+    } else if (cleanError.includes("openrouter") || cleanError.includes("fallback")) {
+      displayError = "⚠️ GROQ UNAVAILABLE → OpenRouter Fallback\n" + data.error;
+    } else if (cleanError.includes("json") || cleanError.includes("parse")) {
+      displayError = "🔧 API FORMAT ERROR\nGroq/OpenRouter returned unexpected data.\nCheck Script Properties > OPENROUTER_API_KEY";
+    }
+
+    document.getElementById("result").textContent = displayError;
     document.getElementById("status").textContent = "Let's try that again.";
     document.getElementById("retryArea").style.display = "block";
-    document.getElementById("retryMessage").textContent = "The swim game couldn't be created. You can try the request again.";
+    document.getElementById("retryMessage").textContent = cleanError.includes("429") 
+      ? "The swim game couldn't be created. Groq is throttling requests. Wait 10 minutes before trying again."
+      : "The swim game couldn't be created. Check the error above and try again.";
     retryAvailable = true;
     return;
   }
+
+  // SUCCESS PATH
   showGameSurfaced();
   document.getElementById("result").textContent = data.result || "No result was returned.";
   document.getElementById("status").textContent = "Game created! Dive in!";
