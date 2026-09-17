@@ -130,13 +130,7 @@ h1 {
   color: #dffaff;
 }
 
-.statusDot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #62e6a5;
-  box-shadow: 0 0 8px rgba(98,230,165,0.7);
-}
+.statusDot { width: 9px; height: 9px; border-radius: 50%; background: #62e6a5; box-shadow: 0 0 8px rgba(98,230,165,0.7); }
 
 
 /* =========================================================
@@ -171,13 +165,7 @@ h1 {
    STATUS
    ========================================================= */
 
-#status {
-  min-height: 25px;
-  color: #dff8ff;
-  margin-bottom: 17px;
-  font-size: 15px;
-  font-weight: bold;
-}
+#status { min-height: 25px; color: #dff8ff; margin-bottom: 17px; font-size: 15px; font-weight: bold; }
 
 
 /* =========================================================
@@ -229,13 +217,7 @@ h1 {
   backdrop-filter: blur(8px);
 }
 
-.ideaLabel {
-  text-align: left;
-  font-size: 14px;
-  font-weight: bold;
-  color: #b9f0ff;
-  margin: 0 0 8px 5px;
-}
+.ideaLabel { text-align: left; font-size: 14px; font-weight: bold; color: #b9f0ff; margin: 0 0 8px 5px; }
 
 textarea {
   width: 100%;
@@ -280,21 +262,14 @@ textarea::placeholder { color: #6793aa; }
 #generateButton:hover { transform: translateY(-2px); }
 #generateButton:active { transform: translateY(4px); box-shadow: 0 2px 0 #c8921d; }
 
-#generateButton:disabled {
-  opacity: 0.75;
-  cursor: not-allowed;
-  transform: none;
-}
+#generateButton:disabled { opacity: 0.75; cursor: not-allowed; transform: none; }
 
 
 /* =========================================================
    LOADING
    ========================================================= */
 
-.loading {
-  opacity: 0.65;
-  pointer-events: none;
-}
+.loading { opacity: 0.65; pointer-events: none; }
 
 
 /* =========================================================
@@ -322,8 +297,7 @@ textarea::placeholder { color: #6793aa; }
   background: linear-gradient(180deg, rgba(100,220,255,0.08), rgba(0,35,80,0.2));
 }
 
-.fishTank::before,
-.fishTank::after {
+.fishTank::before, .fishTank::after {
   content: "";
   position: absolute;
   left: -20%;
@@ -337,10 +311,7 @@ textarea::placeholder { color: #6793aa; }
 .fishTank::before { top: 18px; }
 .fishTank::after { top: 52px; animation-duration: 4s; animation-direction: reverse; }
 
-@keyframes waterMove {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(80px); }
-}
+@keyframes waterMove { 0% { transform: translateX(0); } 100% { transform: translateX(80px); } }
 
 
 /* =========================================================
@@ -360,23 +331,11 @@ textarea::placeholder { color: #6793aa; }
 @keyframes fishSwim { 0% { left: -75px; } 100% { left: calc(100% + 20px); } }
 @keyframes fishBob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-7px) rotate(3deg); } }
 
-.swimmingFish.small {
-  font-size: 24px;
-  top: 43px;
-  animation: fishSwimSmall 8s linear infinite, fishBobSmall 1.5s ease-in-out infinite;
-  animation-delay: 1.3s;
-}
-
+.swimmingFish.small { font-size: 24px; top: 43px; animation: fishSwimSmall 8s linear infinite, fishBobSmall 1.5s ease-in-out infinite; animation-delay: 1.3s; }
 @keyframes fishSwimSmall { 0% { left: -55px; } 100% { left: calc(100% + 20px); } }
 @keyframes fishBobSmall { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
-.swimmingFish.tiny {
-  font-size: 19px;
-  top: 9px;
-  animation: fishSwimTiny 10s linear infinite, fishBobTiny 1.8s ease-in-out infinite;
-  animation-delay: 2.5s;
-}
-
+.swimmingFish.tiny { font-size: 19px; top: 9px; animation: fishSwimTiny 10s linear infinite, fishBobTiny 1.8s ease-in-out infinite; animation-delay: 2.5s; }
 @keyframes fishSwimTiny { 0% { left: -45px; } 100% { left: calc(100% + 20px); } }
 @keyframes fishBobTiny { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
 
@@ -385,14 +344,7 @@ textarea::placeholder { color: #6793aa; }
    FISH BUBBLES
    ========================================================= */
 
-.fishBubble {
-  position: absolute;
-  left: -30px;
-  font-size: 13px;
-  opacity: 0;
-  animation: fishBubbleSwim 3s linear infinite;
-}
-
+.fishBubble { position: absolute; left: -30px; font-size: 13px; opacity: 0; animation: fishBubbleSwim 3s linear infinite; }
 .fishBubble.one { top: 24px; animation-delay: 0.3s; }
 .fishBubble.two { top: 35px; animation-delay: 1.1s; }
 .fishBubble.three { top: 16px; animation-delay: 1.8s; }
@@ -463,9 +415,7 @@ textarea::placeholder { color: #6793aa; }
 }
 
 .resultHeader { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: #0879b8; font-weight: bold; font-size: 18px; }
-
 .resultBubble { width: 30px; height: 30px; border-radius: 50%; background: #71d9f7; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-
 #result { white-space: pre-wrap; line-height: 1.5; font-size: 16px; }
 
 
@@ -474,18 +424,7 @@ textarea::placeholder { color: #6793aa; }
    ========================================================= */
 
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; padding-top: 15px; border-top: 2px dashed #a9ddea; }
-
-.actions button {
-  flex: 1;
-  min-width: 100px;
-  background: #0879b8;
-  color: white;
-  font-weight: bold;
-  border-radius: 11px;
-  box-shadow: 0 3px 0 #04547f;
-  transition: transform 0.12s;
-}
-
+.actions button { flex: 1; min-width: 100px; background: #0879b8; color: white; font-weight: bold; border-radius: 11px; box-shadow: 0 3px 0 #04547f; transition: transform 0.12s; }
 .actions button:hover { transform: translateY(-2px); }
 .actions button:active { transform: translateY(2px); }
 
@@ -688,10 +627,10 @@ const RETRY_TIMEOUT = 30000;
    REQUEST COOLDOWN (Groq free tier is limited per MINUTE)
    After a game finishes, we pause the yellow button for a bit
    so requests don't stack into the same one-minute window.
-   Change 45 to 60 below if you still hit the limit.
+   Change 30 to 45 below if you still hit the limit.
    ========================================================= */
 
-const REQUEST_COOLDOWN_SECONDS = 45;
+const REQUEST_COOLDOWN_SECONDS = 30;
 let cooldownRemaining = 0;
 let cooldownTimer = null;
 
@@ -935,15 +874,29 @@ if (SpeechRecognition) {
   recognition = new SpeechRecognition();
 
   /*
-    CONTINUOUS IS ON so short pauses between sentences ride
-    through. onend will NOT restart automatically (that caused
-    a start/stop noise loop and re-captured the last word).
+    MOBILE FIX:
+
+    Continuous recognition is OFF.
+
+    The browser is allowed to naturally end a session when
+    the speaker pauses.
+
+    IMPORTANT:
+    onend will NOT restart it automatically.
   */
 
-  recognition.continuous = true;
+  recognition.continuous = false;
+
+
   recognition.interimResults = true;
+
+
   recognition.lang = "en-CA";
 
+
+  /* =======================================================
+     RECOGNITION STARTED
+     ======================================================= */
 
   recognition.onstart = function() {
 
@@ -952,12 +905,14 @@ if (SpeechRecognition) {
 
     document.getElementById("micButton").classList.add("recording");
 
-    /* FUN: make the short listening window feel like a game */
-    document.getElementById("status").textContent =
-      "🎤 Talk fast — blurt it out!";
+    document.getElementById("status").textContent = "Listening… tell me your messy idea!";
 
   };
 
+
+  /* =======================================================
+     SPEECH RESULT
+     ======================================================= */
 
   recognition.onresult = function(event) {
 
@@ -991,6 +946,10 @@ if (SpeechRecognition) {
   };
 
 
+  /* =======================================================
+     RECOGNITION ERROR
+     ======================================================= */
+
   recognition.onerror = function(event) {
 
     console.log("Speech recognition error:", event.error);
@@ -1003,9 +962,7 @@ if (SpeechRecognition) {
       recognitionActive = false;
 
       document.getElementById("micButton").classList.remove("recording");
-      document.getElementById("status").textContent =
-        "Microphone permission was blocked. You can still type below.";
-
+      document.getElementById("status").textContent = "Microphone permission was blocked. You can still type below.";
       return;
 
     }
@@ -1016,11 +973,7 @@ if (SpeechRecognition) {
       recognitionActive = false;
 
       document.getElementById("micButton").classList.remove("recording");
-
-      /* FUN: a pause ending is not a failure */
-      document.getElementById("status").textContent =
-        "🫧 All quiet in there! Tap the mic and blurt it out.";
-
+      document.getElementById("status").textContent = "I didn't hear anything. Tap the microphone to try again.";
       return;
 
     }
@@ -1029,11 +982,14 @@ if (SpeechRecognition) {
       return;
     }
 
-    document.getElementById("status").textContent =
-      "Microphone issue: " + event.error + ". You can still type below.";
+    document.getElementById("status").textContent = "Microphone issue: " + event.error + ". You can still type below.";
 
   };
 
+
+  /* =======================================================
+     RECOGNITION ENDED
+     ======================================================= */
 
   recognition.onend = function() {
 
@@ -1052,16 +1008,28 @@ if (SpeechRecognition) {
     document.getElementById("mess").value = finalTranscript;
 
     /*
-      IMPORTANT MOBILE FIX: DO NOT restart recognition here.
-      Restarting caused a start/stop loop (noise) and re-captured
-      the last word (doubling). The user taps the mic to continue.
+      IMPORTANT MOBILE FIX:
+
+      DO NOT restart recognition here.
+
+      The old version did:
+
+        if (recording) {
+            startRecognition();
+        }
+
+      That caused the microphone to make a restart noise
+      every time the phone naturally ended a speech session.
+
+      Now the session simply ends and the user can tap
+      the microphone again when they want to continue.
     */
 
     recording = false;
 
     document.getElementById("micButton").classList.remove("recording");
-    document.getElementById("status").textContent =
-      "Got your mess! Tap the mic to add more, or hit the yellow button.";
+
+    document.getElementById("status").textContent = "Idea captured! Tap the microphone to add more, or edit it below.";
 
   };
 
@@ -1076,12 +1044,16 @@ function toggleRecording() {
 
   if (!recognition) {
 
-    document.getElementById("status").textContent =
-      "Voice input isn't supported here. You can type your idea below.";
-
+    document.getElementById("status").textContent = "Voice input isn't supported here. You can type your idea below.";
     return;
 
   }
+
+  /*
+    ========================================================
+    START RECORDING
+    ========================================================
+  */
 
   if (!recording) {
 
@@ -1090,6 +1062,7 @@ function toggleRecording() {
     const existingText = document.getElementById("mess").value.trim();
 
     finalTranscript = existingText ? existingText + " " : "";
+
     sessionFinalTranscript = "";
     sessionInterimTranscript = "";
 
@@ -1098,6 +1071,12 @@ function toggleRecording() {
     return;
 
   }
+
+  /*
+    ========================================================
+    MANUAL STOP
+    ========================================================
+  */
 
   recording = false;
 
@@ -1110,11 +1089,7 @@ function toggleRecording() {
 
   document.getElementById("mess").value = finalTranscript;
 
-  try {
-    recognition.stop();
-  } catch (e) {
-    console.log("Recognition stop failed:", e);
-  }
+  try { recognition.stop(); } catch (e) { console.log("Recognition stop failed:", e); }
 
   recognitionActive = false;
   recognitionStarting = false;
@@ -1170,8 +1145,7 @@ function updateLoadingMessage() {
 
     retryAvailable = true;
     document.getElementById("retryArea").style.display = "block";
-    document.getElementById("status").textContent =
-      "The fish have been swimming for a while. You can wait or try again.";
+    document.getElementById("status").textContent = "The fish have been swimming for a while. You can wait or try again.";
 
   }
 
@@ -1248,7 +1222,6 @@ function sendGameRequest(mess) {
 
 function generateGame() {
 
-  // Stop the microphone first, so the yellow button never leaves it running.
   if (recording || recognitionActive) {
 
     recording = false;
@@ -1275,10 +1248,8 @@ function generateGame() {
   const mess = document.getElementById("mess").value.trim();
 
   if (!mess) {
-
     document.getElementById("status").textContent = "Tell me your swim game idea first!";
     return;
-
   }
 
   lastMess = mess;
@@ -1358,8 +1329,7 @@ window.addEventListener("message", function(event) {
     document.getElementById("result").textContent = "Something went wrong:\n\n" + data.error;
     document.getElementById("status").textContent = "Let's try that again.";
     document.getElementById("retryArea").style.display = "block";
-    document.getElementById("retryMessage").textContent =
-      "The swim game couldn't be created. You can try the request again.";
+    document.getElementById("retryMessage").textContent = "The swim game couldn't be created. You can try the request again.";
     retryAvailable = true;
 
     return;
