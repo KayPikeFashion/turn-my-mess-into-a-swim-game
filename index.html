@@ -97,7 +97,6 @@ textarea::placeholder { color: #6793aa; }
   -webkit-user-select: none;
   touch-action: manipulation;
 }
-.holdToTalkBtn:active { transform: translateY(3px); box-shadow: 0 2px 0 #b82f38, 0 4px 10px rgba(0,0,0,0.15); }
 .holdToTalkBtn.recording { background: linear-gradient(180deg, #8cffc0, #15985c); box-shadow: 0 5px 0 #087547, 0 0 20px rgba(70,255,170,0.4); }
 @media (max-width: 500px) { body { padding: 0; } .container { padding: 22px 13px 40px; } h1 { font-size: 34px; } .subtitle { font-size: 15px; } #micButton { width: 115px; height: 115px; font-size: 48px; } .ideaCard { padding: 13px; border-radius: 20px; } textarea { min-height: 170px; font-size: 16px; } #generateButton { font-size: 17px; } #resultCard { padding: 17px; } }
 @media (prefers-reduced-motion: reduce) { .bubble, .swimmingFish, .swimmingFish.small, .swimmingFish.tiny, .fishBubble, .fishTank::before, .fishTank::after { animation: none; } .swimmingFish { left: 45%; } .swimmingFish.small { left: 60%; } .swimmingFish.tiny { left: 30%; } * { scroll-behavior: auto !important; } }
@@ -240,7 +239,11 @@ function tryOpenSupportedBrowser() {
   window.open(currentUrl, "_blank");
 }
 
+/* =========================================================
+   CORE FIX: Wait for DOM to be fully ready before touching elements
+   ========================================================= */
 function checkMicrophoneSupport() {
+  // SAFETY: If DOM isn't ready yet, bail out (will be called from init)
   const micButton = document.getElementById("micButton");
   const supportStatus = document.getElementById("supportStatus");
   const status = document.getElementById("status");
@@ -248,6 +251,13 @@ function checkMicrophoneSupport() {
   const warningTitle = document.getElementById("warningTitle");
   const browserTip = document.getElementById("browserTip");
   const browserButton = document.getElementById("browserButton");
+
+  // If any element is missing, DOM isn't ready — caller will retry
+  if (!micButton || !supportStatus || !status || !warning) {
+    console.warn("DOM elements not found yet. checkMicrophoneSupport() will be called from init().");
+    return;
+  }
+
   const device = getDeviceType();
 
   if (SpeechRecognition) {
@@ -259,54 +269,73 @@ function checkMicrophoneSupport() {
     micButton.style.opacity = "1";
     micButton.style.cursor = "pointer";
 
-    // Setup recognition based on device
-    recognition = new SpeechRecognition();
-    if (isMobile) {
-      // Mobile: continuous OFF to prevent auto-restart loops & doubling
-      recognition.continuous = false;
-      // Attach hold-to-talk events
-      const btn = document.getElementById("holdToTalkBtn");
-      btn.addEventListener('touchstart', (e) => { e.preventDefault(); startHoldRecording(); });
-      btn.addEventListener('touchend', (e) => { e.preventDefault(); stopHoldRecording(); });
-      btn.addEventListener('mousedown', (e) => { e.preventDefault(); startHoldRecording(); });
-      btn.addEventListener('mouseup', (e) => { e.preventDefault(); stopHoldRecording(); });
-      btn.addEventListener('mouseleave', (e) => { if(isHolding) stopHoldRecording(); });
-    } else {
-      // Desktop: continuous ON for smooth typing
-      recognition.continuous = true;
-    }
-    recognition.interimResults = true;
-    recognition.lang = "en-CA";
+    // Setup recognition based on device — only create ONE instance
+    try {
+      recognition = new SpeechRecognition();
+      
+      if (isMobile) {
+        // Mobile: continuous OFF to prevent auto-restart loops & doubling
+        recognition.continuous = false;
+        
+        // Attach hold-to-talk events ONCE (use a flag to avoid duplicates on re-init)
+        const btn = document.getElementById("holdToTalkBtn");
+        if (!btn._eventsAttached) {
+          btn._eventsAttached = true;
+          btn.addEventListener('touchstart', (e) => { e.preventDefault(); startHoldRecording(); });
+          btn.addEventListener('touchend', (e) => { e.preventDefault(); stopHoldRecording(); });
+          btn.addEventListener('mousedown', (e) => { e.preventDefault(); startHoldRecording(); });
+          btn.addEventListener('mouseup', (e) => { e.preventDefault(); stopHoldRecording(); });
+          btn.addEventListener('mouseleave', (e) => { if(isHolding) stopHoldRecording(); });
+        }
+      } else {
+        // Desktop: continuous ON for smooth typing
+        recognition.continuous = true;
+      }
+      
+      recognition.interimResults = true;
+      recognition.lang = "en-CA";
 
-    return true;
+      console.log("SpeechRecognition initialized. Device:", device, "Mobile:", isMobile);
+      return true;
+    } catch(e) {
+      console.error("Failed to create SpeechRecognition instance:", e);
+      supportStatus.textContent = "Microphone error";
+      status.textContent = "There was a problem setting up your microphone. You can still type below.";
+      warning.style.display = "block";
+      micButton.disabled = true;
+      micButton.style.opacity = "0.45";
+      micButton.style.cursor = "not-allowed";
+      return false;
+    }
   }
 
+  // SpeechRecognition NOT available
   supportStatus.textContent = "Typing mode";
   warning.style.display = "block";
   micButton.disabled = true;
   micButton.style.opacity = "0.45";
   micButton.style.cursor = "not-allowed";
+  
   if (device === "ios") {
     warningTitle.textContent = "🌊 Voice input isn't available in this browser.";
     browserTip.innerHTML = "You're on an iPhone or iPad. <strong>Try opening this page in Safari</strong> for voice input. You can still type your swim game idea below.";
     browserButton.textContent = "🌊 How to open in Safari";
     browserButton.style.display = "inline-block";
     status.textContent = "Typing mode — try Safari for voice input.";
-    return false;
-  }
-  if (device === "android") {
+  } else if (device === "android") {
     warningTitle.textContent = "🌊 Voice input isn't available in this browser.";
     browserTip.innerHTML = "You're on Android. <strong>Try opening this page in Google Chrome</strong> for voice input. You can still type your swim game idea below.";
     browserButton.textContent = "🌊 Open in Chrome";
     browserButton.style.display = "inline-block";
     status.textContent = "Typing mode — try Chrome for voice input.";
-    return false;
+  } else {
+    warningTitle.textContent = "🌊 Voice input isn't available in this browser.";
+    browserTip.innerHTML = "You can still type your swim game idea below. <strong>Try Google Chrome</strong> if you'd like to use your microphone.";
+    browserButton.textContent = "🌊 Try another browser";
+    browserButton.style.display = "inline-block";
+    status.textContent = "Typing mode — try Chrome for voice input.";
   }
-  warningTitle.textContent = "🌊 Voice input isn't available in this browser.";
-  browserTip.innerHTML = "You can still type your swim game idea below. <strong>Try Google Chrome</strong> if you'd like to use your microphone.";
-  browserButton.textContent = "🌊 Try another browser";
-  browserButton.style.display = "inline-block";
-  status.textContent = "Typing mode — try Chrome for voice input.";
+  
   return false;
 }
 
@@ -318,17 +347,31 @@ function startRecognition() {
   recognitionStarting = true;
   sessionFinalTranscript = "";
   sessionInterimTranscript = "";
-  try { recognition.start(); } catch (e) { recognitionStarting = false; console.log("Recognition start failed:", e); }
+  try { 
+    recognition.start(); 
+  } catch (e) { 
+    recognitionStarting = false; 
+    console.log("Recognition start failed:", e); 
+    document.getElementById("status").textContent = "Could not start microphone. Check permissions.";
+  }
 }
 
+/* =========================================================
+   ATTACH RECOGNITION EVENT LISTENERS ONCE
+   ========================================================= */
 if (SpeechRecognition) {
-  /* Already initialized in checkMicrophoneSupport() per device */
-
+  // These will be called after recognition instance is created in checkMicrophoneSupport()
+  // We set them up here but they'll only fire once recognition.start() is called
+  
   recognition.onstart = function() {
+    console.log("✅ SpeechRecognition started");
     recognitionStarting = false;
     recognitionActive = true;
-    document.getElementById("micButton").classList.add("recording");
-    if (!isMobile) document.getElementById("status").textContent = "Listening… tell me your messy idea!";
+    const micButton = document.getElementById("micButton");
+    if (micButton) micButton.classList.add("recording");
+    if (!isMobile) {
+      document.getElementById("status").textContent = "Listening… tell me your messy idea!";
+    }
   };
 
   recognition.onresult = function(event) {
@@ -347,19 +390,21 @@ if (SpeechRecognition) {
   recognition.onerror = function(event) {
     console.log("Speech recognition error:", event.error);
     recognitionStarting = false;
+    
     if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-      recording = false; recognitionActive = false;
-      document.getElementById("micButton").classList.remove("recording");
+      recording = false; 
+      recognitionActive = false;
+      const micButton = document.getElementById("micButton");
+      if (micButton) micButton.classList.remove("recording");
       document.getElementById("status").textContent = "Microphone permission was blocked. You can still type below.";
       return;
     }
     if (event.error === "no-speech") {
-      recording = false; recognitionActive = false;
-      document.getElementById("micButton").classList.remove("recording");
-      document.getElementById("status").textContent = "I didn't hear anything. Tap the microphone to try again.";
+      // No big deal — just keep listening or let user tap again
       return;
     }
     if (event.error === "aborted") return;
+    
     document.getElementById("status").textContent = "Microphone issue: " + event.error + ". You can still type below.";
   };
 
@@ -373,7 +418,8 @@ if (SpeechRecognition) {
     sessionFinalTranscript = "";
     sessionInterimTranscript = "";
 
-    document.getElementById("mess").value = finalTranscript;
+    const messEl = document.getElementById("mess");
+    if (messEl) messEl.value = finalTranscript;
 
     /*
       CRITICAL FIX: DO NOT restart recognition here.
@@ -381,10 +427,14 @@ if (SpeechRecognition) {
       On mobile, hold-to-talk handles start/stop. On desktop, tap toggle does.
     */
     recording = false;
-    document.getElementById("micButton").classList.remove("recording");
-    if (!isMobile) {
+    const micButton = document.getElementById("micButton");
+    if (micButton) micButton.classList.remove("recording");
+    
+    if (!isMobile && messEl) {
+      messEl.value = finalTranscript;
       document.getElementById("status").textContent = "Idea captured! Tap the microphone to add more, or edit it below.";
-    } else {
+    } else if (messEl) {
+      messEl.value = finalTranscript;
       document.getElementById("status").textContent = "Idea captured! Hold the button again to add more, or tap Generate.";
     }
   };
@@ -398,6 +448,7 @@ function toggleRecording() {
     document.getElementById("status").textContent = "Voice input isn't supported here. You can type your idea below.";
     return;
   }
+  
   // Only active on desktop where continuous=true is safe
   if (isMobile) return;
 
@@ -416,6 +467,7 @@ function toggleRecording() {
   sessionFinalTranscript = "";
   sessionInterimTranscript = "";
   document.getElementById("mess").value = finalTranscript;
+  
   try { recognition.stop(); } catch (e) { console.log("Recognition stop failed:", e); }
   recognitionActive = false;
   recognitionStarting = false;
@@ -529,7 +581,44 @@ function saveResult() { const text = document.getElementById("result").textConte
 function clearResult() { recording = false; recognitionStarting = false; if (recognition) { try { recognition.abort(); } catch (e) {} } recognitionActive = false; stopLoadingAnimation(); document.getElementById("micButton").classList.remove("recording"); document.getElementById("mess").value = ""; document.getElementById("result").textContent = ""; document.getElementById("resultCard").style.display = "none"; document.getElementById("loadingOcean").style.display = "none"; document.getElementById("retryArea").style.display = "none"; finalTranscript = ""; sessionFinalTranscript = ""; sessionInterimTranscript = ""; lastMess = ""; activeRequestId = ""; retryAvailable = false; document.getElementById("status").textContent = "Ready for your next messy idea!"; window.scrollTo({ top: 0, behavior: "smooth" }); }
 function escapeHtml(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 
-checkMicrophoneSupport();
+/* =========================================================
+   INITIALIZATION — THE FIX: Wait for DOM to be ready
+   ========================================================= */
+function init() {
+  console.log("Initializing Swim Game...");
+  
+  // Try to set up microphone support
+  const result = checkMicrophoneSupport();
+  
+  if (result === true) {
+    console.log("✅ Microphone initialized successfully");
+  } else if (result === false) {
+    console.log("❌ Microphone not available — typing mode only");
+  } else {
+    // Elements weren't found — DOM wasn't ready. Retry after a short delay.
+    console.warn("DOM elements not found on first try, retrying in 200ms...");
+    setTimeout(init, 200);
+    return;
+  }
+  
+  // Also attach the same event handlers to hold-to-talk button for desktop fallback
+  const holdBtn = document.getElementById("holdToTalkBtn");
+  if (holdBtn && !holdBtn._eventsAttached) {
+    holdBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startHoldRecording(); });
+    holdBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopHoldRecording(); });
+    holdBtn.addEventListener('mousedown', (e) => { e.preventDefault(); startHoldRecording(); });
+    holdBtn.addEventListener('mouseup', (e) => { e.preventDefault(); stopHoldRecording(); });
+    holdBtn.addEventListener('mouseleave', (e) => { if(isHolding) stopHoldRecording(); });
+  }
+}
+
+// Start initialization when DOM is ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  // DOM already ready
+  init();
+}
 </script>
 </body>
 </html>
