@@ -1386,8 +1386,9 @@ let recognition = null;
   recording means the user is CURRENTLY asking the microphone
   to listen.
 
-  Unlike the previous version, we DO NOT automatically restart
-  recognition when a mobile browser ends a session.
+  We DO NOT automatically restart recognition when a mobile
+  browser ends a session. Restarting caused a start/stop loop
+  (noise) and re-captured the last word (doubling).
 
   Mobile browsers commonly end speech recognition after a
   natural pause. That is okay.
@@ -1761,19 +1762,20 @@ if (SpeechRecognition) {
 
 
   /*
-    MOBILE FIX:
+    CONTINUOUS IS ON:
 
-    Continuous recognition is OFF.
-
-    The browser is allowed to naturally end a session when
-    the speaker pauses.
+    This lets short pauses between sentences ride through
+    without ending the session, so you can keep talking.
 
     IMPORTANT:
-    onend will NOT restart it automatically.
+    onend will NOT restart it automatically. Restarting caused
+    a start/stop loop (noise) and re-captured the last word
+    (doubling). If a long silence ends the session, the user
+    simply taps the microphone again to continue.
   */
 
   recognition.continuous =
-    false;
+    true;
 
 
   recognition.interimResults =
@@ -2053,19 +2055,10 @@ if (SpeechRecognition) {
       /*
         IMPORTANT MOBILE FIX:
 
-        DO NOT restart recognition here.
-
-        The old version did:
-
-          if (recording) {
-              startRecognition();
-          }
-
-        That caused the microphone to make a restart noise
-        every time the phone naturally ended a speech session.
-
-        Now the session simply ends and the user can tap
-        the microphone again when they want to continue.
+        DO NOT restart recognition here. Restarting caused a
+        start/stop loop (noise) and re-captured the last word
+        (doubling). The session simply ends and the user can
+        tap the microphone again to continue.
       */
 
       recording =
