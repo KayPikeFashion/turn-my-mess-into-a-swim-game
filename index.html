@@ -1773,7 +1773,7 @@ if (SpeechRecognition) {
   */
 
   recognition.continuous =
-    false;
+    true;
 
 
   recognition.interimResults =
@@ -2041,7 +2041,7 @@ if (SpeechRecognition) {
 
 
       /*
-        Show only the permanent transcript.
+        Show the transcript so far.
       */
 
       document
@@ -2051,26 +2051,30 @@ if (SpeechRecognition) {
 
 
       /*
-        IMPORTANT MOBILE FIX:
+        KEY CHANGE FOR PAUSES:
 
-        DO NOT restart recognition here.
+        If the user is STILL recording (they haven't tapped
+        stop), automatically start a fresh session so that
+        short pauses between sentences do NOT cut them off.
 
-        The old version did:
-
-          if (recording) {
-              startRecognition();
-          }
-
-        That caused the microphone to make a restart noise
-        every time the phone naturally ended a speech session.
-
-        Now the session simply ends and the user can tap
-        the microphone again when they want to continue.
+        The browser ends each session after a pause, but this
+        restart picks right back up while they keep talking.
       */
 
-      recording =
-        false;
+      if (
+        recording
+      ) {
 
+        startRecognition();
+
+        return;
+
+      }
+
+
+      /*
+        Otherwise the user stopped on purpose — show captured.
+      */
 
       document
         .getElementById("micButton")
