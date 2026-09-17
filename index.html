@@ -7,9 +7,6 @@
 <title>Turn My Mess Into a Swim Game</title>
 
 <style>
-/* =========================================================
-   OCEAN THEME (unchanged from your working version)
-   ========================================================= */
 * { box-sizing: border-box; }
 body { font-family: Arial, sans-serif; margin: 0; min-height: 100vh; color: white; text-align: center; overflow-x: hidden; background: radial-gradient(circle at 15% 20%, rgba(80, 200, 255, 0.25), transparent 25%), radial-gradient(circle at 85% 10%, rgba(70, 160, 255, 0.2), transparent 25%), linear-gradient(180deg, #0879b8 0%, #075f9d 35%, #063f78 70%, #032d5c 100%); }
 .bubble { position: fixed; bottom: -80px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.07); pointer-events: none; animation: floatBubble linear infinite; }
@@ -123,7 +120,6 @@ textarea::placeholder { color: #6793aa; }
 
 For example:
 'Kids pretend they're rockets and kick from the wall to me. Maybe we could make them blast off…'"></textarea>
-    <!-- Hold to Talk button (optimized for mobile, works on desktop too) -->
     <button id="holdToTalkBtn" class="holdToTalkBtn">🎤 Hold to Talk</button>
     <button id="generateButton" onclick="generateGame()">🫧 Turn My Mess Into A Swim Game</button>
     <div id="loadingOcean">
@@ -157,15 +153,11 @@ For example:
 
 <script>
 /* =========================================================
-   SPEECH RECOGNITION & DEVICE-AWARE BEHAVIOR
+   STATE VARIABLES
    ========================================================= */
-
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition = null;
-
-// Detect mobile vs desktop reliably
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 1);
 
+let recognition = null;
 let recording = false;
 let recognitionActive = false;
 let recognitionStarting = false;
@@ -174,9 +166,6 @@ let finalTranscript = "";
 let sessionFinalTranscript = "";
 let sessionInterimTranscript = "";
 
-/* =========================================================
-   AI LOADING / RETRY VARIABLES
-   ========================================================= */
 let loadingTimer = null;
 let loadingStartTime = 0;
 let lastMess = "";
@@ -184,44 +173,208 @@ let activeRequestId = "";
 let retryAvailable = false;
 const RETRY_TIMEOUT = 30000;
 
-/* =========================================================
-   HOLD TO TALK STATE (Mobile optimized)
-   ========================================================= */
 let isHolding = false;
 
+/* =========================================================
+   HELPER: Safely get DOM elements (returns null if missing)
+   ========================================================= */
+function $(id) { return document.getElementById(id); }
+
+/* =========================================================
+   CREATE & CONFIGURE SPEECH RECOGNITION INSTANCE
+   Called ONCE after DOM is ready — this is the key fix
+   ========================================================= */
+function createRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return false;
+
+  try {
+    recognition = new SpeechRecognition();
+    
+    // Device-specific config
+    if (isMobile) {
+      recognition.continuous = false;
+    } else {
+      recognition.continuous = true;
+    }
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    /* =========================================================
+       ATTACH ALL EVENT LISTENERS HERE — AFTER instance exists
+       ========================================================= */
+    
+    recognition.onstart = function() {
+      console.log("✅ SpeechRecognition started");
+      recognitionStarting = false;
+      recognitionActive = true;
+      const btn = $("micButton");
+      if (btn) btn.classList.add("recording");
+      if (!isMobile) $("status").textContent = "Listening… tell me your messy idea!";
+    };
+
+    recognition.onresult = function(event) {
+      let newFinal = "", newInterim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        const transcript = result[0].transcript;
+        if (result.isFinal) newFinal += transcript;
+        else newInterim += transcript;
+      }
+      if (newFinal.trim()) sessionFinalTranscript += newFinal.trim() + " ";
+      sessionInterimTranscript = newInterim;
+      $("mess").value = finalTranscript + sessionFinalTranscript + sessionInterimTranscript;
+    };
+
+    recognition.onerror = function(event) {
+      console.log("Speech recognition error:", event.error);
+      recognitionStarting = false;
+      
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        recording = false; 
+        recognitionActive = false;
+        const btn = $("micButton");
+        if (btn) btn.classList.remove("recording");
+        $("status").textContent = "Microphone permission was blocked. You can still type below.";
+        return;
+      }
+      if (event.error === "no-speech") {
+        // Silent fail — just keep waiting
+        return;
+      }
+      if (event.error === "aborted") return;
+      
+      $("status").textContent = "Microphone issue: " + event.error + ". You can still type below.";
+    };
+
+    recognition.onend = function() {
+      console.log("Speech recognition ended.");
+      recognitionActive = false;
+      recognitionStarting = false;
+
+      // Commit session words exactly once
+      if (sessionFinalTranscript) finalTranscript += sessionFinalTranscript;
+      sessionFinalTranscript = "";
+      sessionInterimTranscript = "";
+
+      $("mess").value = finalTranscript;
+
+      // CRITICAL: DO NOT auto-restart — causes loops & doubling
+      recording = false;
+      const btn = $("micButton");
+      if (btn) btn.classList.remove("recording");
+      
+      if (!isMobile) {
+        $("status").textContent = "Idea captured! Tap the microphone to add more, or edit it below.";
+      } else {
+        $("status").textContent = "Idea captured! Hold the button again to add more, or tap Generate.";
+      }
+    };
+
+    // Attach hold-to-talk events ONCE
+    const holdBtn = $("holdToTalkBtn");
+    if (holdBtn && !holdBtn._eventsAttached) {
+      holdBtn._eventsAttached = true;
+      holdBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startHoldRecording(); });
+      holdBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopHoldRecording(); });
+      holdBtn.addEventListener('mousedown', (e) => { e.preventDefault(); startHoldRecording(); });
+      holdBtn.addEventListener('mouseup', (e) => { e.preventDefault(); stopHoldRecording(); });
+      holdBtn.addEventListener('mouseleave', (e) => { if(isHolding) stopHoldRecording(); });
+    }
+
+    console.log("✅ SpeechRecognition created & configured. Device:", isMobile ? "mobile" : "desktop");
+    return true;
+
+  } catch(e) {
+    console.error("❌ Failed to create SpeechRecognition:", e);
+    $("supportStatus").textContent = "Microphone error";
+    $("status").textContent = "There was a problem setting up your microphone. You can still type below.";
+    $("micWarning").style.display = "block";
+    $("micButton").disabled = true;
+    $("micButton").style.opacity = "0.45";
+    $("micButton").style.cursor = "not-allowed";
+    return false;
+  }
+}
+
+/* =========================================================
+   HOLD TO TALK (Mobile primary, works on desktop too)
+   ========================================================= */
 function startHoldRecording() {
   if (!recognition || isHolding) return;
   isHolding = true;
-  document.getElementById("holdToTalkBtn").classList.add("recording");
-  document.getElementById("status").textContent = "Listening… tell me your messy idea!";
+  $("holdToTalkBtn").classList.add("recording");
+  $("status").textContent = "Listening… tell me your messy idea!";
   try { recognition.start(); } catch(e) { console.log("Hold start failed:", e); }
 }
 
 function stopHoldRecording() {
   if (!recognition || !isHolding) return;
   isHolding = false;
-  document.getElementById("holdToTalkBtn").classList.remove("recording");
+  $("holdToTalkBtn").classList.remove("recording");
   try { recognition.stop(); } catch(e) { console.log("Hold stop failed:", e); }
 }
 
 /* =========================================================
-   DEVICE / BROWSER DETECTION
+   START ONE SPEECH RECOGNITION SESSION
+   ========================================================= */
+function startRecognition() {
+  if (!recognition || recognitionActive || recognitionStarting) return;
+  recognitionStarting = true;
+  sessionFinalTranscript = "";
+  sessionInterimTranscript = "";
+  try { 
+    recognition.start(); 
+  } catch (e) { 
+    recognitionStarting = false; 
+    console.log("Recognition start failed:", e); 
+    $("status").textContent = "Could not start microphone. Check permissions.";
+  }
+}
+
+/* =========================================================
+   DESKTOP TAP-TO-TOGGLE (Only active on desktop)
+   ========================================================= */
+function toggleRecording() {
+  if (!recognition) {
+    $("status").textContent = "Voice input isn't supported here. You can type your idea below.";
+    return;
+  }
+  
+  // Only active on desktop where continuous=true is safe
+  if (isMobile) return;
+
+  if (!recording) {
+    recording = true;
+    const existingText = $("mess").value.trim();
+    finalTranscript = existingText ? existingText + " " : "";
+    sessionFinalTranscript = "";
+    sessionInterimTranscript = "";
+    startRecognition();
+    return;
+  }
+
+  recording = false;
+  if (sessionFinalTranscript) finalTranscript += sessionFinalTranscript;
+  sessionFinalTranscript = "";
+  sessionInterimTranscript = "";
+  $("mess").value = finalTranscript;
+  
+  try { recognition.stop(); } catch (e) { console.log("Recognition stop failed:", e); }
+  recognitionActive = false;
+  recognitionStarting = false;
+  $("micButton").classList.remove("recording");
+  $("status").textContent = "Idea captured! You can edit it below.";
+}
+
+/* =========================================================
+   BROWSER/DEVICE HELPERS
    ========================================================= */
 function getDeviceType() {
   const ua = navigator.userAgent || navigator.vendor || window.opera;
   if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) return "ios";
   if (/Android/i.test(ua)) return "android";
   return "desktop";
-}
-
-function getBrowserType() {
-  const ua = navigator.userAgent || "";
-  if (/Edg/i.test(ua)) return "edge";
-  if (/Firefox/i.test(ua)) return "firefox";
-  if (/CriOS/i.test(ua)) return "chrome-ios";
-  if (/Chrome/i.test(ua)) return "chrome";
-  if (/Safari/i.test(ua)) return "safari";
-  return "other";
 }
 
 function tryOpenSupportedBrowser() {
@@ -240,256 +393,20 @@ function tryOpenSupportedBrowser() {
 }
 
 /* =========================================================
-   CORE FIX: Wait for DOM to be fully ready before touching elements
+   LOADING / RETRY FUNCTIONS
    ========================================================= */
-function checkMicrophoneSupport() {
-  // SAFETY: If DOM isn't ready yet, bail out (will be called from init)
-  const micButton = document.getElementById("micButton");
-  const supportStatus = document.getElementById("supportStatus");
-  const status = document.getElementById("status");
-  const warning = document.getElementById("micWarning");
-  const warningTitle = document.getElementById("warningTitle");
-  const browserTip = document.getElementById("browserTip");
-  const browserButton = document.getElementById("browserButton");
-
-  // If any element is missing, DOM isn't ready — caller will retry
-  if (!micButton || !supportStatus || !status || !warning) {
-    console.warn("DOM elements not found yet. checkMicrophoneSupport() will be called from init().");
-    return;
-  }
-
-  const device = getDeviceType();
-
-  if (SpeechRecognition) {
-    supportStatus.textContent = "Microphone ready";
-    status.textContent = isMobile ? "Hold the 🎤 button below to talk. Tap here to toggle." : "Tap the microphone and start talking.";
-    warning.style.display = "none";
-    browserButton.style.display = "none";
-    micButton.disabled = false;
-    micButton.style.opacity = "1";
-    micButton.style.cursor = "pointer";
-
-    // Setup recognition based on device — only create ONE instance
-    try {
-      recognition = new SpeechRecognition();
-      
-      if (isMobile) {
-        // Mobile: continuous OFF to prevent auto-restart loops & doubling
-        recognition.continuous = false;
-        
-        // Attach hold-to-talk events ONCE (use a flag to avoid duplicates on re-init)
-        const btn = document.getElementById("holdToTalkBtn");
-        if (!btn._eventsAttached) {
-          btn._eventsAttached = true;
-          btn.addEventListener('touchstart', (e) => { e.preventDefault(); startHoldRecording(); });
-          btn.addEventListener('touchend', (e) => { e.preventDefault(); stopHoldRecording(); });
-          btn.addEventListener('mousedown', (e) => { e.preventDefault(); startHoldRecording(); });
-          btn.addEventListener('mouseup', (e) => { e.preventDefault(); stopHoldRecording(); });
-          btn.addEventListener('mouseleave', (e) => { if(isHolding) stopHoldRecording(); });
-        }
-      } else {
-        // Desktop: continuous ON for smooth typing
-        recognition.continuous = true;
-      }
-      
-      recognition.interimResults = true;
-      recognition.lang = "en-CA";
-
-      console.log("SpeechRecognition initialized. Device:", device, "Mobile:", isMobile);
-      return true;
-    } catch(e) {
-      console.error("Failed to create SpeechRecognition instance:", e);
-      supportStatus.textContent = "Microphone error";
-      status.textContent = "There was a problem setting up your microphone. You can still type below.";
-      warning.style.display = "block";
-      micButton.disabled = true;
-      micButton.style.opacity = "0.45";
-      micButton.style.cursor = "not-allowed";
-      return false;
-    }
-  }
-
-  // SpeechRecognition NOT available
-  supportStatus.textContent = "Typing mode";
-  warning.style.display = "block";
-  micButton.disabled = true;
-  micButton.style.opacity = "0.45";
-  micButton.style.cursor = "not-allowed";
-  
-  if (device === "ios") {
-    warningTitle.textContent = "🌊 Voice input isn't available in this browser.";
-    browserTip.innerHTML = "You're on an iPhone or iPad. <strong>Try opening this page in Safari</strong> for voice input. You can still type your swim game idea below.";
-    browserButton.textContent = "🌊 How to open in Safari";
-    browserButton.style.display = "inline-block";
-    status.textContent = "Typing mode — try Safari for voice input.";
-  } else if (device === "android") {
-    warningTitle.textContent = "🌊 Voice input isn't available in this browser.";
-    browserTip.innerHTML = "You're on Android. <strong>Try opening this page in Google Chrome</strong> for voice input. You can still type your swim game idea below.";
-    browserButton.textContent = "🌊 Open in Chrome";
-    browserButton.style.display = "inline-block";
-    status.textContent = "Typing mode — try Chrome for voice input.";
-  } else {
-    warningTitle.textContent = "🌊 Voice input isn't available in this browser.";
-    browserTip.innerHTML = "You can still type your swim game idea below. <strong>Try Google Chrome</strong> if you'd like to use your microphone.";
-    browserButton.textContent = "🌊 Try another browser";
-    browserButton.style.display = "inline-block";
-    status.textContent = "Typing mode — try Chrome for voice input.";
-  }
-  
-  return false;
-}
-
-/* =========================================================
-   START ONE SPEECH RECOGNITION SESSION
-   ========================================================= */
-function startRecognition() {
-  if (!recognition || recognitionActive || recognitionStarting) return;
-  recognitionStarting = true;
-  sessionFinalTranscript = "";
-  sessionInterimTranscript = "";
-  try { 
-    recognition.start(); 
-  } catch (e) { 
-    recognitionStarting = false; 
-    console.log("Recognition start failed:", e); 
-    document.getElementById("status").textContent = "Could not start microphone. Check permissions.";
-  }
-}
-
-/* =========================================================
-   ATTACH RECOGNITION EVENT LISTENERS ONCE
-   ========================================================= */
-if (SpeechRecognition) {
-  // These will be called after recognition instance is created in checkMicrophoneSupport()
-  // We set them up here but they'll only fire once recognition.start() is called
-  
-  recognition.onstart = function() {
-    console.log("✅ SpeechRecognition started");
-    recognitionStarting = false;
-    recognitionActive = true;
-    const micButton = document.getElementById("micButton");
-    if (micButton) micButton.classList.add("recording");
-    if (!isMobile) {
-      document.getElementById("status").textContent = "Listening… tell me your messy idea!";
-    }
-  };
-
-  recognition.onresult = function(event) {
-    let newFinal = "", newInterim = "";
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      const result = event.results[i];
-      const transcript = result[0].transcript;
-      if (result.isFinal) newFinal += transcript;
-      else newInterim += transcript;
-    }
-    if (newFinal.trim()) sessionFinalTranscript += newFinal.trim() + " ";
-    sessionInterimTranscript = newInterim;
-    document.getElementById("mess").value = finalTranscript + sessionFinalTranscript + sessionInterimTranscript;
-  };
-
-  recognition.onerror = function(event) {
-    console.log("Speech recognition error:", event.error);
-    recognitionStarting = false;
-    
-    if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-      recording = false; 
-      recognitionActive = false;
-      const micButton = document.getElementById("micButton");
-      if (micButton) micButton.classList.remove("recording");
-      document.getElementById("status").textContent = "Microphone permission was blocked. You can still type below.";
-      return;
-    }
-    if (event.error === "no-speech") {
-      // No big deal — just keep listening or let user tap again
-      return;
-    }
-    if (event.error === "aborted") return;
-    
-    document.getElementById("status").textContent = "Microphone issue: " + event.error + ". You can still type below.";
-  };
-
-  recognition.onend = function() {
-    console.log("Speech recognition ended.");
-    recognitionActive = false;
-    recognitionStarting = false;
-
-    // Commit session words exactly once
-    if (sessionFinalTranscript) finalTranscript += sessionFinalTranscript;
-    sessionFinalTranscript = "";
-    sessionInterimTranscript = "";
-
-    const messEl = document.getElementById("mess");
-    if (messEl) messEl.value = finalTranscript;
-
-    /*
-      CRITICAL FIX: DO NOT restart recognition here.
-      Auto-restarting caused the mobile doubling bug and unprompted shutdowns.
-      On mobile, hold-to-talk handles start/stop. On desktop, tap toggle does.
-    */
-    recording = false;
-    const micButton = document.getElementById("micButton");
-    if (micButton) micButton.classList.remove("recording");
-    
-    if (!isMobile && messEl) {
-      messEl.value = finalTranscript;
-      document.getElementById("status").textContent = "Idea captured! Tap the microphone to add more, or edit it below.";
-    } else if (messEl) {
-      messEl.value = finalTranscript;
-      document.getElementById("status").textContent = "Idea captured! Hold the button again to add more, or tap Generate.";
-    }
-  };
-}
-
-/* =========================================================
-   MICROPHONE BUTTON (Desktop tap-to-toggle)
-   ========================================================= */
-function toggleRecording() {
-  if (!recognition) {
-    document.getElementById("status").textContent = "Voice input isn't supported here. You can type your idea below.";
-    return;
-  }
-  
-  // Only active on desktop where continuous=true is safe
-  if (isMobile) return;
-
-  if (!recording) {
-    recording = true;
-    const existingText = document.getElementById("mess").value.trim();
-    finalTranscript = existingText ? existingText + " " : "";
-    sessionFinalTranscript = "";
-    sessionInterimTranscript = "";
-    startRecognition();
-    return;
-  }
-
-  recording = false;
-  if (sessionFinalTranscript) finalTranscript += sessionFinalTranscript;
-  sessionFinalTranscript = "";
-  sessionInterimTranscript = "";
-  document.getElementById("mess").value = finalTranscript;
-  
-  try { recognition.stop(); } catch (e) { console.log("Recognition stop failed:", e); }
-  recognitionActive = false;
-  recognitionStarting = false;
-  document.getElementById("micButton").classList.remove("recording");
-  document.getElementById("status").textContent = "Idea captured! You can edit it below.";
-}
-
-/* =========================================================
-   LOADING / RETRY FUNCTIONS (unchanged)
-   ========================================================= */
-function startLoadingAnimation() { stopLoadingAnimation(); loadingStartTime = Date.now(); retryAvailable = false; document.getElementById("retryArea").style.display = "none"; document.getElementById("loadingOcean").style.display = "block"; document.getElementById("loadingFinished").style.display = "none"; updateLoadingMessage(); loadingTimer = setInterval(updateLoadingMessage, 700); }
-function updateLoadingMessage() { const elapsed = Date.now() - loadingStartTime; let message; if (elapsed < 4000) message = "🐠 Finding the fun…"; else if (elapsed < 8000) message = "🐟 Swimming through your idea…"; else if (elapsed < 12000) message = "🐡 Gathering the good stuff…"; else if (elapsed < 18000) message = "🐳 Your game is taking shape…"; else if (elapsed < RETRY_TIMEOUT) message = "🦈 Still swimming… thanks for waiting!"; else message = "🌊 This is taking longer than usual…"; document.getElementById("loadingMessage").textContent = message; if (elapsed >= RETRY_TIMEOUT && !retryAvailable) { retryAvailable = true; document.getElementById("retryArea").style.display = "block"; document.getElementById("status").textContent = "The fish have been swimming for a while. You can wait or try again."; } }
+function startLoadingAnimation() { stopLoadingAnimation(); loadingStartTime = Date.now(); retryAvailable = false; $("retryArea").style.display = "none"; $("loadingOcean").style.display = "block"; $("loadingFinished").style.display = "none"; updateLoadingMessage(); loadingTimer = setInterval(updateLoadingMessage, 700); }
+function updateLoadingMessage() { const elapsed = Date.now() - loadingStartTime; let message; if (elapsed < 4000) message = "🐠 Finding the fun…"; else if (elapsed < 8000) message = "🐟 Swimming through your idea…"; else if (elapsed < 12000) message = "🐡 Gathering the good stuff…"; else if (elapsed < 18000) message = "🐳 Your game is taking shape…"; else if (elapsed < RETRY_TIMEOUT) message = "🦈 Still swimming… thanks for waiting!"; else message = "🌊 This is taking longer than usual…"; $("loadingMessage").textContent = message; if (elapsed >= RETRY_TIMEOUT && !retryAvailable) { retryAvailable = true; $("retryArea").style.display = "block"; $("status").textContent = "The fish have been swimming for a while. You can wait or try again."; } }
 function stopLoadingAnimation() { if (loadingTimer) { clearInterval(loadingTimer); loadingTimer = null; } }
-function showGameSurfaced() { document.getElementById("loadingFinished").style.display = "block"; document.getElementById("loadingMessage").textContent = "🎉 Your swim game is ready!"; setTimeout(function() { document.getElementById("loadingOcean").style.display = "none"; }, 700); }
+function showGameSurfaced() { $("loadingFinished").style.display = "block"; $("loadingMessage").textContent = "🎉 Your swim game is ready!"; setTimeout(function() { $("loadingOcean").style.display = "none"; }, 700); }
 
 function sendGameRequest(mess) {
   const requestId = Date.now().toString() + Math.random().toString(36).substring(2);
   activeRequestId = requestId;
   const enhancedMess = mess + "\n\n" + "EDITOR NOTE — CREATIVE INPUT REQUIRED: Preserve the teacher's actual game idea and do not replace the core activity. However, the finished game should include useful creative teaching input. Do NOT write 'None.' for Variations/Options or Sample Scenes/Bonus Rules/Ideas merely because the teacher did not provide any. Create 2–3 genuinely useful variations or scaling options that naturally fit this specific game, and 1–2 fun sample lines, bonus rules, or ideas that a swim instructor could realistically use. These additions should be simple, age-appropriate, pool-appropriate, and clearly connected to the actual game. Do not add unrelated equipment, skills, hazards, or complicated mechanics.";
-  document.getElementById("appsScriptMess").value = enhancedMess;
-  document.getElementById("appsScriptRequestId").value = requestId;
-  document.getElementById("appsScriptForm").submit();
+  $("appsScriptMess").value = enhancedMess;
+  $("appsScriptRequestId").value = requestId;
+  $("appsScriptForm").submit();
 }
 
 function generateGame() {
@@ -500,52 +417,52 @@ function generateGame() {
     sessionFinalTranscript = ""; sessionInterimTranscript = "";
     if (recognition) { try { recognition.abort(); } catch (e) {} }
     recognitionActive = false;
-    document.getElementById("micButton").classList.remove("recording");
-    document.getElementById("mess").value = finalTranscript;
+    $("micButton").classList.remove("recording");
+    $("mess").value = finalTranscript;
   }
-  const mess = document.getElementById("mess").value.trim();
-  if (!mess) { document.getElementById("status").textContent = "Tell me your swim game idea first!"; return; }
+  const mess = $("mess").value.trim();
+  if (!mess) { $("status").textContent = "Tell me your swim game idea first!"; return; }
   lastMess = mess;
-  const generateButton = document.getElementById("generateButton");
+  const generateButton = $("generateButton");
   generateButton.classList.add("loading");
   generateButton.textContent = "🫧 Making a swim game…";
-  document.getElementById("status").textContent = "Creating your swim game…";
-  document.getElementById("resultCard").style.display = "block";
-  document.getElementById("result").textContent = "";
+  $("status").textContent = "Creating your swim game…";
+  $("resultCard").style.display = "block";
+  $("result").textContent = "";
   startLoadingAnimation();
   sendGameRequest(mess);
 }
 
 function retryGame() {
   if (!lastMess) return;
-  const generateButton = document.getElementById("generateButton");
+  const generateButton = $("generateButton");
   generateButton.classList.add("loading");
   generateButton.textContent = "🫧 Trying again…";
-  document.getElementById("status").textContent = "Sending the fish back out…";
-  document.getElementById("retryArea").style.display = "none";
-  document.getElementById("result").textContent = "";
+  $("status").textContent = "Sending the fish back out…";
+  $("retryArea").style.display = "none";
+  $("result").textContent = "";
   startLoadingAnimation();
   sendGameRequest(lastMess);
 }
+
 window.addEventListener("message", function(event) {
   console.log("Message received:", event.data);
   const data = event.data;
   if (!data || data.type !== "swimGameResult") return;
 
-  const currentRequestId = document.getElementById("appsScriptRequestId").value;
+  const currentRequestId = $("appsScriptRequestId").value;
   if (data.requestId !== currentRequestId) { console.log("Old request ignored."); return; }
 
   stopLoadingAnimation();
-  const generateButton = document.getElementById("generateButton");
+  const generateButton = $("generateButton");
   generateButton.classList.remove("loading");
   generateButton.textContent = "🫧 Turn My Mess Into A Swim Game";
-  document.getElementById("retryArea").style.display = "none";
+  $("retryArea").style.display = "none";
   retryAvailable = false;
 
   if (data.error) {
-    document.getElementById("loadingOcean").style.display = "none";
+    $("loadingOcean").style.display = "none";
     
-    // Show EXACT backend error with clear formatting
     let displayError = data.error;
     const cleanError = data.error.toLowerCase();
     
@@ -557,66 +474,79 @@ window.addEventListener("message", function(event) {
       displayError = "🔧 API FORMAT ERROR\nGroq/OpenRouter returned unexpected data.\nCheck Script Properties > OPENROUTER_API_KEY";
     }
 
-    document.getElementById("result").textContent = displayError;
-    document.getElementById("status").textContent = "Let's try that again.";
-    document.getElementById("retryArea").style.display = "block";
-    document.getElementById("retryMessage").textContent = cleanError.includes("429") 
+    $("result").textContent = displayError;
+    $("status").textContent = "Let's try that again.";
+    $("retryArea").style.display = "block";
+    $("retryMessage").textContent = cleanError.includes("429") 
       ? "The swim game couldn't be created. Groq is throttling requests. Wait 10 minutes before trying again."
       : "The swim game couldn't be created. Check the error above and try again.";
     retryAvailable = true;
     return;
   }
 
-  // SUCCESS PATH
   showGameSurfaced();
-  document.getElementById("result").textContent = data.result || "No result was returned.";
-  document.getElementById("status").textContent = "Game created! Dive in!";
+  $("result").textContent = data.result || "No result was returned.";
+  $("status").textContent = "Game created! Dive in!";
 });
 
-function copyResult() { const text = document.getElementById("result").textContent; navigator.clipboard.writeText(text); document.getElementById("status").textContent = "Copied! Ready to share."; }
-function downloadResult() { const text = document.getElementById("result").textContent; const blob = new Blob([text], { type: "text/plain" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "swim-game.txt"; a.click(); URL.revokeObjectURL(url); document.getElementById("status").textContent = "Swim game downloaded!"; }
-async function shareResult() { const text = document.getElementById("result").textContent; if (navigator.share) { try { await navigator.share({ title: "My Swim Game", text: text }); } catch (e) {} } else { await navigator.clipboard.writeText(text); alert("Copied to clipboard."); } }
-function printResult() { const text = document.getElementById("result").textContent; const printWindow = window.open("", "_blank"); printWindow.document.write(`<html><head><title>Swim Game</title><style>body{font-family:Arial,sans-serif;padding:40px;white-space:pre-wrap;line-height:1.5;color:#07385d;}</style></head><body>${escapeHtml(text)}</body></html>`); printWindow.document.close(); printWindow.print(); }
-function saveResult() { const text = document.getElementById("result").textContent; localStorage.setItem("savedSwimGame", text); alert("Swim game saved on this device."); }
-function clearResult() { recording = false; recognitionStarting = false; if (recognition) { try { recognition.abort(); } catch (e) {} } recognitionActive = false; stopLoadingAnimation(); document.getElementById("micButton").classList.remove("recording"); document.getElementById("mess").value = ""; document.getElementById("result").textContent = ""; document.getElementById("resultCard").style.display = "none"; document.getElementById("loadingOcean").style.display = "none"; document.getElementById("retryArea").style.display = "none"; finalTranscript = ""; sessionFinalTranscript = ""; sessionInterimTranscript = ""; lastMess = ""; activeRequestId = ""; retryAvailable = false; document.getElementById("status").textContent = "Ready for your next messy idea!"; window.scrollTo({ top: 0, behavior: "smooth" }); }
+function copyResult() { const text = $("result").textContent; navigator.clipboard.writeText(text); $("status").textContent = "Copied! Ready to share."; }
+function downloadResult() { const text = $("result").textContent; const blob = new Blob([text], { type: "text/plain" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "swim-game.txt"; a.click(); URL.revokeObjectURL(url); $("status").textContent = "Swim game downloaded!"; }
+async function shareResult() { const text = $("result").textContent; if (navigator.share) { try { await navigator.share({ title: "My Swim Game", text: text }); } catch (e) {} } else { await navigator.clipboard.writeText(text); alert("Copied to clipboard."); } }
+function printResult() { const text = $("result").textContent; const printWindow = window.open("", "_blank"); printWindow.document.write(`<html><head><title>Swim Game</title><style>body{font-family:Arial,sans-serif;padding:40px;white-space:pre-wrap;line-height:1.5;color:#07385d;}</style></head><body>${escapeHtml(text)}</body></html>`); printWindow.document.close(); printWindow.print(); }
+function saveResult() { const text = $("result").textContent; localStorage.setItem("savedSwimGame", text); alert("Swim game saved on this device."); }
+function clearResult() { recording = false; recognitionStarting = false; if (recognition) { try { recognition.abort(); } catch (e) {} } recognitionActive = false; stopLoadingAnimation(); $("micButton").classList.remove("recording"); $("mess").value = ""; $("result").textContent = ""; $("resultCard").style.display = "none"; $("loadingOcean").style.display = "none"; $("retryArea").style.display = "none"; finalTranscript = ""; sessionFinalTranscript = ""; sessionInterimTranscript = ""; lastMess = ""; activeRequestId = ""; retryAvailable = false; $("status").textContent = "Ready for your next messy idea!"; window.scrollTo({ top: 0, behavior: "smooth" }); }
 function escapeHtml(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 
 /* =========================================================
-   INITIALIZATION — THE FIX: Wait for DOM to be ready
+   INITIALIZATION — THE FIX: Everything happens in correct order
    ========================================================= */
 function init() {
-  console.log("Initializing Swim Game...");
+  console.log("🚀 Initializing Swim Game...");
   
-  // Try to set up microphone support
-  const result = checkMicrophoneSupport();
-  
-  if (result === true) {
-    console.log("✅ Microphone initialized successfully");
-  } else if (result === false) {
-    console.log("❌ Microphone not available — typing mode only");
+  // Step 1: Create recognition instance (attaches all event listeners internally)
+  const micSupported = createRecognition();
+
+  if (micSupported) {
+    $("supportStatus").textContent = "Microphone ready";
+    $("status").textContent = isMobile ? "Hold the 🎤 button below to talk. Tap here to toggle." : "Tap the microphone and start talking.";
+    $("micWarning").style.display = "none";
+    $("browserButton").style.display = "none";
+    $("micButton").disabled = false;
+    $("micButton").style.opacity = "1";
+    $("micButton").style.cursor = "pointer";
   } else {
-    // Elements weren't found — DOM wasn't ready. Retry after a short delay.
-    console.warn("DOM elements not found on first try, retrying in 200ms...");
-    setTimeout(init, 200);
-    return;
+    // SpeechRecognition not available
+    $("supportStatus").textContent = "Typing mode";
+    $("micWarning").style.display = "block";
+    $("micButton").disabled = true;
+    $("micButton").style.opacity = "0.45";
+    $("micButton").style.cursor = "not-allowed";
+    
+    const device = getDeviceType();
+    if (device === "ios") {
+      $("warningTitle").textContent = "🌊 Voice input isn't available in this browser.";
+      $("browserTip").innerHTML = "You're on an iPhone or iPad. <strong>Try opening this page in Safari</strong> for voice input. You can still type your swim game idea below.";
+      $("browserButton").textContent = "🌊 How to open in Safari";
+    } else if (device === "android") {
+      $("warningTitle").textContent = "🌊 Voice input isn't available in this browser.";
+      $("browserTip").innerHTML = "You're on Android. <strong>Try opening this page in Google Chrome</strong> for voice input. You can still type your swim game idea below.";
+      $("browserButton").textContent = "🌊 Open in Chrome";
+    } else {
+      $("warningTitle").textContent = "🌊 Voice input isn't available in this browser.";
+      $("browserTip").innerHTML = "You can still type your swim game idea below. <strong>Try Google Chrome</strong> if you'd like to use your microphone.";
+      $("browserButton").textContent = "🌊 Try another browser";
+    }
+    $("browserButton").style.display = "inline-block";
+    $("status").textContent = "Typing mode — try a supported browser for voice input.";
   }
-  
-  // Also attach the same event handlers to hold-to-talk button for desktop fallback
-  const holdBtn = document.getElementById("holdToTalkBtn");
-  if (holdBtn && !holdBtn._eventsAttached) {
-    holdBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startHoldRecording(); });
-    holdBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopHoldRecording(); });
-    holdBtn.addEventListener('mousedown', (e) => { e.preventDefault(); startHoldRecording(); });
-    holdBtn.addEventListener('mouseup', (e) => { e.preventDefault(); stopHoldRecording(); });
-    holdBtn.addEventListener('mouseleave', (e) => { if(isHolding) stopHoldRecording(); });
-  }
+
+  console.log("✅ Initialization complete.");
 }
 
-// Start initialization when DOM is ready
+// Run when DOM is fully ready
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {
-  // DOM already ready
   init();
 }
 </script>
